@@ -1,9 +1,11 @@
+import { memo } from "react";
 import { DecisionForm } from "@/components/rail/DecisionForm";
 import { DecisionList } from "@/components/rail/DecisionList";
 import { SectionStatus } from "@/components/rail/SectionStatus";
 import { TrackClosureReport } from "@/components/rail/TrackClosureReport";
+import { AIAssistant } from "@/components/rail/AIAssistant";
 
-export default function Index() {
+function Index() {
   return (
     <div className="min-h-[calc(100vh-64px)] bg-gradient-to-br from-background to-primary/5">
       <div className="container py-6 space-y-6">
@@ -18,6 +20,9 @@ export default function Index() {
           </div>
         </div>
       </div>
+      <AIAssistant />
     </div>
   );
 }
+
+export default memo(Index);

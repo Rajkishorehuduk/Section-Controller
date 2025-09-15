@@ -8,6 +8,7 @@ import {
   acknowledgeDecision,
   deleteDecision,
 } from "./routes/decisions";
+import { handleAIPlan } from "./routes/ai";
 
 export function createServer() {
   const app = express();
@@ -30,6 +31,9 @@ export function createServer() {
   app.post("/api/decisions", createDecision);
   app.post("/api/decisions/:id/ack", acknowledgeDecision);
   app.delete("/api/decisions/:id", deleteDecision);
+
+  // AI
+  app.post("/api/ai/plan", handleAIPlan);
 
   return app;
 }
