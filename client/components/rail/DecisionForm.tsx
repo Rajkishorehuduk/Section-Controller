@@ -39,6 +39,7 @@ export function DecisionForm() {
     meta: {
       passThroughLine: undefined,
       loopStation: undefined,
+      directive: "pass",
     },
   });
 
@@ -62,9 +63,32 @@ export function DecisionForm() {
     onError: (e: any) => toast.error(e?.message ?? "Error"),
   });
 
+  const computedMessage = useMemo(() => {
+    const dir = (form as any).meta?.directive as undefined | "pass" | "halt" | "stable";
+    const line = (form as any).meta?.passThroughLine as any;
+    const loopStation = (form as any).meta?.loopStation as any;
+    const loopId = (form as any).meta?.loopId as any;
+
+    if (dir === "pass") {
+      if (line) return `Pass the train through via ${line} Line at target stations.`;
+      return "Pass the train through the target stations.";
+    }
+    if (dir === "halt") {
+      return "Halt the train at the target stations.";
+    }
+    if (dir === "stable") {
+      if (loopStation) {
+        return `Stable the train at ${loopStation}${loopId ? ` (Loop ${loopId})` : ""}.`;
+      }
+      return "Stable the train at the target station.";
+    }
+    return "";
+  }, [form]);
+
   const submit = () => {
     const payload: NewDecision = {
       ...form,
+      message: computedMessage,
       effect: {
         loopAssignments:
           form.meta?.loopStation && (form as any).meta?.loopId && form.meta?.consistNo
@@ -176,7 +200,17 @@ export function DecisionForm() {
 
         <div className="space-y-2">
           <Label>Directive to Station Masters</Label>
-          <Textarea placeholder="Write the directive" value={form.message} onChange={(e) => setForm((f) => ({ ...f, message: e.target.value }))} className="min-h-24" required />
+          <Select value={(form as any).meta?.directive ?? "pass"} onValueChange={(v) => setForm((f) => ({ ...f, meta: { ...f.meta, directive: v as any } }))}>
+            <SelectTrigger>
+              <SelectValue placeholder="Select directive" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="pass">Pass through</SelectItem>
+              <SelectItem value="halt">Halt at target station</SelectItem>
+              <SelectItem value="stable">Stable at target station</SelectItem>
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">{computedMessage}</p>
         </div>
 
         <div className="space-y-2">
@@ -195,7 +229,7 @@ export function DecisionForm() {
       </div>
 
       <div className="flex items-center justify-end gap-3">
-        <Button type="submit" disabled={mutation.isPending || !form.message.trim()}>
+        <Button type="submit" disabled={mutation.isPending || !computedMessage.trim()}>
           {mutation.isPending ? "Issuing..." : "Issue Decision"}
         </Button>
       </div>
