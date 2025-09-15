@@ -89,7 +89,7 @@ The Occupancy screen displays the live status of each station and loop in the se
 ---
 
 ## 🏗 Project Structure  
-
+```
 ├── client/ # Frontend React app
 │ ├── App.tsx
 │ ├── global.css
@@ -109,7 +109,7 @@ The Occupancy screen displays the live status of each station and loop in the se
 ├── postcss.config.js
 ├── vite.config.ts # Vite configuration
 └── README.md # Project documentation
-
+```
 ---
 
 ## 🚀 Getting Started  
@@ -135,7 +135,7 @@ pnpm install
 ```bash
 npm run dev
 ```
-App runs at: http://localhost:5173
+App runs at: [http://localhost:5173](http://localhost:8080/)
 
 ### Production Build
 ```bash
@@ -200,3 +200,6 @@ Open an issue for feature requests or bug reports.
 Submit PRs with detailed descriptions.
 
 ---
+
+
+
