@@ -5,11 +5,19 @@ import { createRoot } from "react-dom/client";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Outlet, Link, useLocation } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Outlet,
+  Link,
+  useLocation,
+} from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Occupancy from "./pages/Occupancy";
 import { TrainFront } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
 
@@ -17,6 +25,19 @@ function Layout() {
   const location = useLocation();
   const linkClass = (path: string) =>
     `px-3 py-1.5 rounded-md text-sm font-medium ${location.pathname === path ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground hover:bg-muted"}`;
+
+  const formatTime = (d: Date) =>
+    new Intl.DateTimeFormat(undefined, {
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+      hour12: false,
+    }).format(d);
+  const [time, setTime] = useState<string>(() => formatTime(new Date()));
+  useEffect(() => {
+    const id = setInterval(() => setTime(formatTime(new Date())), 1000);
+    return () => clearInterval(id);
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -31,14 +52,30 @@ function Layout() {
               decoding="async"
             />
             <div className="leading-tight">
-              <div className="font-semibold tracking-tight">Eastern Railway Control Panel</div>
-              <div className="text-xs text-muted-foreground">Chandanpur ↔ Shaktigarh</div>
+              <div className="font-semibold tracking-tight">
+                Eastern Railway Control Panel
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Chandanpur ↔ Shaktigarh
+              </div>
             </div>
           </Link>
-          <nav className="ml-auto flex items-center gap-2">
-            <Link to="/" className={linkClass("/")}>Dashboard</Link>
-            <Link to="/occupancy" className={linkClass("/occupancy")}>Occupancy</Link>
-          </nav>
+          <div className="ml-auto flex items-center gap-4">
+            <nav className="flex items-center gap-2">
+              <Link to="/" className={linkClass("/")}>
+                Dashboard
+              </Link>
+              <Link to="/occupancy" className={linkClass("/occupancy")}>
+                Occupancy
+              </Link>
+            </nav>
+            <div
+              className="text-sm sm:text-base font-mono tabular-nums text-muted-foreground"
+              aria-label="Clock"
+            >
+              {time}
+            </div>
+          </div>
         </div>
       </header>
       <main className="flex-1">
@@ -46,7 +83,8 @@ function Layout() {
       </main>
       <footer className="border-t bg-background/60">
         <div className="container py-3 text-xs text-muted-foreground">
-          © {new Date().getFullYear()} Eastern Railway — Panel for directives to Station Masters
+          © {new Date().getFullYear()} Eastern Railway — Panel for directives
+          to Station Masters
         </div>
       </footer>
     </div>
