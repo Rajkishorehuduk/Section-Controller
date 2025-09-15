@@ -311,7 +311,7 @@ export function AIAssistant() {
                             setAlternatives(data.alternatives);
                             setMessages((m) => [
                               ...m,
-                              { id: crypto.randomUUID(), role: "assistant", text: "Here is a Gemini-assisted plan with detailed rationale." },
+                              { id: uuid(), role: "assistant", text: "Here is a Gemini-assisted plan with detailed rationale." },
                             ]);
                           } else {
                             setMessages((m) => [
