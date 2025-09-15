@@ -246,7 +246,7 @@ export function DecisionForm() {
                 else setForm((f) => ({ ...f, meta: { ...f.meta, directive: "halt" as any } }));
                 return;
               }
-              if (loads[best] >= 3 || (loads[best] >= 2 && f.priority !== "Low")) {
+              if (loads[best] >= 3 || (loads[best] >= 2 && form.priority !== "Low")) {
                 const loopCandidate = (form as any).meta?.loopStation || (["Chandanpur","Masagram","Gurap","Saktigarh"].find((s) => form.targets.includes(s as Station)) as Station | undefined);
                 if (loopCandidate) setForm((f) => ({ ...f, meta: { ...f.meta, directive: "stable" as any, loopStation: loopCandidate, loopId: 1 as any } }));
                 else setForm((f) => ({ ...f, meta: { ...f.meta, directive: "halt" as any } }));
