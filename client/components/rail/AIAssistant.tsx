@@ -102,7 +102,7 @@ export function AIAssistant() {
       .filter((l) => live.blocked[l])
       .join(", ") || "None"}.`;
     const intro: ChatMsg = {
-      id: "intro",
+      id: uuid(),
       role: "assistant",
       text: `${summary} What is the train priority?`,
       chips: [
