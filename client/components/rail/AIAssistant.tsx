@@ -96,14 +96,14 @@ export function AIAssistant() {
     const intro: ChatMsg = {
       id: "intro",
       role: "assistant",
-      text: `${summary} What is the train priority?`;
+      text: `${summary} What is the train priority?`,
       chips: [
         { label: "Low", value: "Low" },
         { label: "Normal", value: "Normal" },
         { label: "High", value: "High" },
         { label: "Critical", value: "Critical" },
       ],
-    } as any;
+    };
     setMessages([intro]);
     setAlternatives([]);
     setFormData({});
