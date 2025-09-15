@@ -204,7 +204,7 @@ export function AIAssistant() {
       setMessages((m) => [
         ...m,
         {
-          id: crypto.randomUUID(),
+          id: uuid(),
           role: "assistant",
           text: "Got it. What's the train priority?",
           chips: [
