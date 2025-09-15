@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Bot, Send, Wand2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import type { DecisionsResponse, Line, Priority, Station } from "@shared/api";
@@ -264,106 +264,108 @@ export function AIAssistant() {
 
   return (
     <>
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
-          <div className="p-4 border-b">
-            <SheetHeader>
-              <SheetTitle className="flex items-center gap-2">
-                <Bot className="h-5 w-5 text-primary" /> Rail AI Assistant
-              </SheetTitle>
-            </SheetHeader>
-          </div>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="w-full max-w-2xl p-0 overflow-hidden">
+          <div className="h-2 bg-gradient-to-r from-primary to-primary/60" />
+          <div className="p-6">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-2xl">
+                <Bot className="h-6 w-6 text-primary" /> Rail AI Assistant
+              </DialogTitle>
+              <DialogDescription>Scenario planner and what-if simulation for crossing, precedence, and overtake.</DialogDescription>
+            </DialogHeader>
 
-          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
-            {messages.map((m) => (
-              <div key={m.id} className={cn("max-w-[85%] rounded-lg p-3 text-sm", m.role === "assistant" ? "bg-secondary text-foreground" : "ml-auto bg-primary text-primary-foreground")}> 
-                <div>{m.text}</div>
-                {m.chips && (
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {m.chips.map((c, i) => (
-                      <Button key={`${m.id}-${i}`} size="sm" variant="outline" onClick={() => onChip(c.value)}>
-                        {c.label}
-                      </Button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            ))}
+            <div ref={scrollRef} className="mt-4 space-y-4 max-h-[50vh] overflow-y-auto">
+              {messages.map((m) => (
+                <div key={m.id} className={cn("rounded-lg border p-4", m.role === "assistant" ? "bg-card" : "bg-transparent text-muted-foreground")}>
+                  <div className="text-sm whitespace-pre-wrap">{m.text}</div>
+                  {m.chips && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {m.chips.map((c, i) => (
+                        <Button key={`${m.id}-${i}`} size="sm" variant="outline" onClick={() => onChip(c.value)}>
+                          {c.label}
+                        </Button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
 
-            {alternatives.length > 0 && (
-              <div className="space-y-2">
-                <Separator />
-                <div className="flex items-center justify-between">
-                  <div className="text-xs text-muted-foreground">Suggested strategies</div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={async () => {
-                      try {
-                        const r = await fetch("/api/ai/plan", {
-                          method: "POST",
-                          headers: { "Content-Type": "application/json" },
-                          body: JSON.stringify({ live, inputs: formData }),
-                        });
-                        const data = await r.json();
-                        if (Array.isArray(data?.alternatives) && data.alternatives.length) {
-                          setAlternatives(data.alternatives);
+              {alternatives.length > 0 && (
+                <div className="space-y-3">
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div className="text-xs text-muted-foreground">Suggested strategies</div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        try {
+                          const r = await fetch("/api/ai/plan", {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ live, inputs: formData }),
+                          });
+                          const data = await r.json();
+                          if (Array.isArray(data?.alternatives) && data.alternatives.length) {
+                            setAlternatives(data.alternatives);
+                            setMessages((m) => [
+                              ...m,
+                              { id: crypto.randomUUID(), role: "assistant", text: "Here is a Gemini-assisted plan with detailed rationale." },
+                            ]);
+                          } else {
+                            setMessages((m) => [
+                              ...m,
+                              { id: crypto.randomUUID(), role: "assistant", text: "Gemini could not produce a plan for the current inputs." },
+                            ]);
+                          }
+                        } catch (e) {
                           setMessages((m) => [
                             ...m,
-                            { id: crypto.randomUUID(), role: "assistant", text: "Here is a Gemini-assisted plan with detailed rationale." },
-                          ]);
-                        } else {
-                          setMessages((m) => [
-                            ...m,
-                            { id: crypto.randomUUID(), role: "assistant", text: "Gemini could not produce a plan for the current inputs." },
+                            { id: crypto.randomUUID(), role: "assistant", text: "AI request failed. Please try again." },
                           ]);
                         }
-                      } catch (e) {
-                        setMessages((m) => [
-                          ...m,
-                          { id: crypto.randomUUID(), role: "assistant", text: "AI request failed. Please try again." },
-                        ]);
-                      }
-                    }}
-                  >
-                    Ask Gemini Plan
-                  </Button>
-                </div>
-                {alternatives.map((alt) => (
-                  <div key={alt.key} className="rounded-md border p-3">
-                    <div className="text-sm font-medium">{alt.title}</div>
-                    <div className="text-xs text-muted-foreground mt-1">{alt.explanation}</div>
-                    <div className="mt-2">
-                      <Button size="sm" onClick={() => applyAlternative(alt)}>Apply to Decision</Button>
-                    </div>
+                      }}
+                    >
+                      Ask Gemini Plan
+                    </Button>
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
+                  {alternatives.map((alt) => (
+                    <div key={alt.key} className="rounded-md border p-4">
+                      <div className="text-sm font-medium">{alt.title}</div>
+                      <div className="text-xs text-muted-foreground mt-1">{alt.explanation}</div>
+                      <div className="mt-2">
+                        <Button size="sm" onClick={() => applyAlternative(alt)}>Apply to Decision</Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          <div className="p-3 border-t">
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                const v = input;
-                setInput("");
-                onSend(v);
-              }}
-              className="flex items-center gap-2"
-            >
-              <Input
-                placeholder="Type here... (e.g., High priority to Saktigarh, passing Belmuri)"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-              />
-              <Button type="submit" size="icon">
-                <Send className="h-4 w-4" />
-              </Button>
-            </form>
+            <div className="mt-4">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const v = input;
+                  setInput("");
+                  onSend(v);
+                }}
+                className="flex items-center gap-2"
+              >
+                <Input
+                  placeholder="Type here... (e.g., High priority to Saktigarh, passing Belmuri)"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                />
+                <Button type="submit" size="icon">
+                  <Send className="h-4 w-4" />
+                </Button>
+              </form>
+            </div>
           </div>
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
       <Button className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg" onClick={() => setOpen(true)}>
         <Wand2 className="h-5 w-5" />
