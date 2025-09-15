@@ -2,7 +2,13 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Bot, Send, Wand2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import type { DecisionsResponse, Line, Priority, Station } from "@shared/api";
@@ -43,12 +49,21 @@ const stations: Station[] = [
   "Palla Road",
   "Saktigarh",
 ];
-const loopStations: Station[] = ["Chandanpur", "Masagram", "Gurap", "Saktigarh"];
+const loopStations: Station[] = [
+  "Chandanpur",
+  "Masagram",
+  "Gurap",
+  "Saktigarh",
+];
 
 const uuid = () => {
   try {
     // @ts-ignore
-    if (typeof crypto !== "undefined" && typeof (crypto as any).randomUUID === "function") return (crypto as any).randomUUID();
+    if (
+      typeof crypto !== "undefined" &&
+      typeof (crypto as any).randomUUID === "function"
+    )
+      return (crypto as any).randomUUID();
   } catch {}
   return Math.random().toString(36).slice(2);
 };
@@ -57,7 +72,11 @@ export function AIAssistant() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
-  const [formData, setFormData] = useState<{ priority?: Priority; destination?: Station; currentPosition?: string }>({});
+  const [formData, setFormData] = useState<{
+    priority?: Priority;
+    destination?: Station;
+    currentPosition?: string;
+  }>({});
   const [alternatives, setAlternatives] = useState<Alternative[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -72,7 +91,11 @@ export function AIAssistant() {
   });
 
   const live = useMemo(() => {
-    const loads: Record<Line, number> = { "Up Main": 0, "Down Main": 0, Reverse: 0 } as any;
+    const loads: Record<Line, number> = {
+      "Up Main": 0,
+      "Down Main": 0,
+      Reverse: 0,
+    } as any;
     const blocked: Partial<Record<Line, boolean>> = {};
     const now = Date.now();
     const active = (decisionsData?.decisions ?? []).filter((d) => {
@@ -85,12 +108,14 @@ export function AIAssistant() {
       if (d.effect?.lines) {
         for (const [ln, st] of Object.entries(d.effect.lines)) {
           if (st === "Blocked") blocked[ln as Line] = true;
-          if (st === "Occupied" || st === "Maintenance") loads[ln as Line] = Math.max(loads[ln as Line], 1);
+          if (st === "Occupied" || st === "Maintenance")
+            loads[ln as Line] = Math.max(loads[ln as Line], 1);
         }
       }
       const tc = d.meta?.trackClosure?.toLowerCase() || "";
       if (tc.includes("up") && tc.includes("main")) blocked["Up Main"] = true;
-      if (tc.includes("down") && tc.includes("main")) blocked["Down Main"] = true;
+      if (tc.includes("down") && tc.includes("main"))
+        blocked["Down Main"] = true;
       if (tc.includes("reverse")) blocked["Reverse"] = true;
     }
     return { loads, blocked };
@@ -98,9 +123,9 @@ export function AIAssistant() {
 
   useEffect(() => {
     if (!open) return;
-    const summary = `Live occupancy — Up: ${live.loads["Up Main"] ?? 0}, Down: ${live.loads["Down Main"] ?? 0}, Reverse: ${live.loads["Reverse"] ?? 0}. Blocked: ${allLines
-      .filter((l) => live.blocked[l])
-      .join(", ") || "None"}.`;
+    const summary = `Live occupancy — Up: ${live.loads["Up Main"] ?? 0}, Down: ${live.loads["Down Main"] ?? 0}, Reverse: ${live.loads["Reverse"] ?? 0}. Blocked: ${
+      allLines.filter((l) => live.blocked[l]).join(", ") || "None"
+    }.`;
     const intro: ChatMsg = {
       id: uuid(),
       role: "assistant",
@@ -118,13 +143,22 @@ export function AIAssistant() {
   }, [open]);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+    scrollRef.current?.scrollTo({
+      top: scrollRef.current.scrollHeight,
+      behavior: "smooth",
+    });
   }, [messages.length]);
 
   const parseAndUpdate = (text: string) => {
     const next: Partial<typeof formData> = {};
     const t = text.toLowerCase();
-    const prioMap: Record<string, Priority> = { low: "Low", normal: "Normal", medium: "Normal", high: "High", critical: "Critical" } as any;
+    const prioMap: Record<string, Priority> = {
+      low: "Low",
+      normal: "Normal",
+      medium: "Normal",
+      high: "High",
+      critical: "Critical",
+    } as any;
     for (const k of Object.keys(prioMap)) {
       if (t.includes(k)) next.priority = prioMap[k];
     }
@@ -143,9 +177,16 @@ export function AIAssistant() {
   };
 
   const proposeStrategies = () => {
-    if (!formData.priority || !formData.destination || !formData.currentPosition) return;
+    if (
+      !formData.priority ||
+      !formData.destination ||
+      !formData.currentPosition
+    )
+      return;
     const best = getBestLine();
-    const loopAt = loopStations.includes(formData.destination) ? formData.destination : loopStations[0];
+    const loopAt = loopStations.includes(formData.destination)
+      ? formData.destination
+      : loopStations[0];
 
     const list: Alternative[] = [];
 
@@ -175,9 +216,10 @@ export function AIAssistant() {
       passThroughLine: best,
       loopStation: !best ? loopAt : undefined,
       loopId: !best ? 1 : undefined,
-      explanation: formData.priority === "Low" || formData.priority === "Normal"
-        ? `Yield by waiting at ${loopAt} to clear main line, then proceed via ${best || "available line"}.`
-        : `Proceed via ${best || "available line"} and instruct lower-priority movements to hold.`,
+      explanation:
+        formData.priority === "Low" || formData.priority === "Normal"
+          ? `Yield by waiting at ${loopAt} to clear main line, then proceed via ${best || "available line"}.`
+          : `Proceed via ${best || "available line"} and instruct lower-priority movements to hold.`,
     });
 
     list.push({
@@ -280,17 +322,36 @@ export function AIAssistant() {
               <DialogTitle className="flex items-center gap-2 text-2xl">
                 <Bot className="h-6 w-6 text-primary" /> Rail AI Assistant
               </DialogTitle>
-              <DialogDescription>Scenario planner and what-if simulation for crossing, precedence, and overtake.</DialogDescription>
+              <DialogDescription>
+                Scenario planner and what-if simulation for crossing,
+                precedence, and overtake.
+              </DialogDescription>
             </DialogHeader>
 
-            <div ref={scrollRef} className="mt-4 space-y-4 max-h-[50vh] overflow-y-auto">
+            <div
+              ref={scrollRef}
+              className="mt-4 space-y-4 max-h-[50vh] overflow-y-auto"
+            >
               {messages.map((m) => (
-                <div key={m.id} className={cn("rounded-lg border p-4", m.role === "assistant" ? "bg-card" : "bg-transparent text-muted-foreground")}>
+                <div
+                  key={m.id}
+                  className={cn(
+                    "rounded-lg border p-4",
+                    m.role === "assistant"
+                      ? "bg-card"
+                      : "bg-transparent text-muted-foreground",
+                  )}
+                >
                   <div className="text-sm whitespace-pre-wrap">{m.text}</div>
                   {m.chips && (
                     <div className="mt-3 flex flex-wrap gap-2">
                       {m.chips.map((c, i) => (
-                        <Button key={`${m.id}-${i}`} size="sm" variant="outline" onClick={() => onChip(c.value)}>
+                        <Button
+                          key={`${m.id}-${i}`}
+                          size="sm"
+                          variant="outline"
+                          onClick={() => onChip(c.value)}
+                        >
                           {c.label}
                         </Button>
                       ))}
@@ -303,7 +364,9 @@ export function AIAssistant() {
                 <div className="space-y-3">
                   <Separator />
                   <div className="flex items-center justify-between">
-                    <div className="text-xs text-muted-foreground">Suggested strategies</div>
+                    <div className="text-xs text-muted-foreground">
+                      Suggested strategies
+                    </div>
                     <Button
                       variant="outline"
                       size="sm"
@@ -315,22 +378,37 @@ export function AIAssistant() {
                             body: JSON.stringify({ live, inputs: formData }),
                           });
                           const data = await r.json();
-                          if (Array.isArray(data?.alternatives) && data.alternatives.length) {
+                          if (
+                            Array.isArray(data?.alternatives) &&
+                            data.alternatives.length
+                          ) {
                             setAlternatives(data.alternatives);
                             setMessages((m) => [
                               ...m,
-                              { id: uuid(), role: "assistant", text: "Here is a Gemini-assisted plan with detailed rationale." },
+                              {
+                                id: uuid(),
+                                role: "assistant",
+                                text: "Here is a Gemini-assisted plan with detailed rationale.",
+                              },
                             ]);
                           } else {
                             setMessages((m) => [
                               ...m,
-                              { id: uuid(), role: "assistant", text: "Gemini could not produce a plan for the current inputs." },
+                              {
+                                id: uuid(),
+                                role: "assistant",
+                                text: "Gemini could not produce a plan for the current inputs.",
+                              },
                             ]);
                           }
                         } catch (e) {
                           setMessages((m) => [
                             ...m,
-                            { id: uuid(), role: "assistant", text: "AI request failed. Please try again." },
+                            {
+                              id: uuid(),
+                              role: "assistant",
+                              text: "AI request failed. Please try again.",
+                            },
                           ]);
                         }
                       }}
@@ -341,9 +419,13 @@ export function AIAssistant() {
                   {alternatives.map((alt) => (
                     <div key={alt.key} className="rounded-md border p-4">
                       <div className="text-sm font-medium">{alt.title}</div>
-                      <div className="text-xs text-muted-foreground mt-1">{alt.explanation}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {alt.explanation}
+                      </div>
                       <div className="mt-2">
-                        <Button size="sm" onClick={() => applyAlternative(alt)}>Apply to Decision</Button>
+                        <Button size="sm" onClick={() => applyAlternative(alt)}>
+                          Apply to Decision
+                        </Button>
                       </div>
                     </div>
                   ))}
@@ -375,7 +457,10 @@ export function AIAssistant() {
         </DialogContent>
       </Dialog>
 
-      <Button className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg" onClick={() => setOpen(true)}>
+      <Button
+        className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg"
+        onClick={() => setOpen(true)}
+      >
         <Wand2 className="h-5 w-5" />
         <span className="sr-only">Open Rail AI Assistant</span>
       </Button>

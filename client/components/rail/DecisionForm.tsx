@@ -106,9 +106,15 @@ export function DecisionForm() {
       }));
       toast.info("Applied AI recommendation");
     };
-    window.addEventListener("ai-recommendation-apply", handler as EventListener);
+    window.addEventListener(
+      "ai-recommendation-apply",
+      handler as EventListener,
+    );
     return () => {
-      window.removeEventListener("ai-recommendation-apply", handler as EventListener);
+      window.removeEventListener(
+        "ai-recommendation-apply",
+        handler as EventListener,
+      );
     };
   }, []);
 

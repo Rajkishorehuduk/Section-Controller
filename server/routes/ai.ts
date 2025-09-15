@@ -88,15 +88,28 @@ export const handleAIPlan: RequestHandler = async (req, res) => {
     const alts = parsed.alternatives.map((a: any, idx: number) => ({
       key: String(a.key ?? `alt-${idx + 1}`),
       title: String(a.title ?? "Alternative"),
-      directive: a.directive === "halt" || a.directive === "stable" ? a.directive : "pass",
-      passThroughLine: ["Up Main", "Down Main", "Reverse"].includes(a.passThroughLine) ? a.passThroughLine : undefined,
-      loopStation: ["Chandanpur", "Masagram", "Gurap", "Saktigarh"].includes(a.loopStation) ? a.loopStation : undefined,
+      directive:
+        a.directive === "halt" || a.directive === "stable"
+          ? a.directive
+          : "pass",
+      passThroughLine: ["Up Main", "Down Main", "Reverse"].includes(
+        a.passThroughLine,
+      )
+        ? a.passThroughLine
+        : undefined,
+      loopStation: ["Chandanpur", "Masagram", "Gurap", "Saktigarh"].includes(
+        a.loopStation,
+      )
+        ? a.loopStation
+        : undefined,
       loopId: typeof a.loopId === "number" ? a.loopId : undefined,
       explanation: String(a.explanation ?? ""),
     }));
 
     res.json({ alternatives: alts });
   } catch (e: any) {
-    res.status(500).json({ error: "AI plan failed", message: e?.message || String(e) });
+    res
+      .status(500)
+      .json({ error: "AI plan failed", message: e?.message || String(e) });
   }
 };
