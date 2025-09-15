@@ -125,6 +125,7 @@ export function AIAssistant() {
     const posMatch = text.match(/(at|near|passing)\s+([A-Za-z\s]+)$/i);
     if (posMatch) next.currentPosition = posMatch[2].trim();
     if (Object.keys(next).length) setFormData((s) => ({ ...s, ...next }));
+    return next;
   };
 
   const getBestLine = () => {
@@ -196,51 +197,50 @@ export function AIAssistant() {
     const v = value.trim();
     if (!v) return;
     setMessages((m) => [...m, { id: crypto.randomUUID(), role: "user", text: v }]);
-    parseAndUpdate(v);
+    const extracted = parseAndUpdate(v);
+    const merged = { ...formData, ...extracted };
 
-    setTimeout(() => {
-      if (!formData.priority) {
-        setMessages((m) => [
-          ...m,
-          {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            text: "Got it. What's the train priority?",
-            chips: [
-              { label: "Low", value: "Low" },
-              { label: "Normal", value: "Normal" },
-              { label: "High", value: "High" },
-              { label: "Critical", value: "Critical" },
-            ],
-          },
-        ]);
-        return;
-      }
-      if (!formData.destination) {
-        setMessages((m) => [
-          ...m,
-          {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            text: "Destination station?",
-            chips: stations.slice(0, 6).map((s) => ({ label: s, value: s })),
-          },
-        ]);
-        return;
-      }
-      if (!formData.currentPosition) {
-        setMessages((m) => [
-          ...m,
-          {
-            id: crypto.randomUUID(),
-            role: "assistant",
-            text: "Current position (e.g., 'Passing Belmuri' or 'At Masagram')?",
-          },
-        ]);
-        return;
-      }
-      proposeStrategies();
-    }, 50);
+    if (!merged.priority) {
+      setMessages((m) => [
+        ...m,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          text: "Got it. What's the train priority?",
+          chips: [
+            { label: "Low", value: "Low" },
+            { label: "Normal", value: "Normal" },
+            { label: "High", value: "High" },
+            { label: "Critical", value: "Critical" },
+          ],
+        },
+      ]);
+      return;
+    }
+    if (!merged.destination) {
+      setMessages((m) => [
+        ...m,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          text: "Destination station?",
+          chips: stations.slice(0, 6).map((s) => ({ label: s, value: s })),
+        },
+      ]);
+      return;
+    }
+    if (!merged.currentPosition) {
+      setMessages((m) => [
+        ...m,
+        {
+          id: crypto.randomUUID(),
+          role: "assistant",
+          text: "Current position (e.g., 'Passing Belmuri' or 'At Masagram')?",
+        },
+      ]);
+      return;
+    }
+    proposeStrategies();
   };
 
   const applyAlternative = (alt: Alternative) => {
