@@ -186,7 +186,7 @@ export function AIAssistant() {
     setMessages((m) => [
       ...m,
       {
-        id: crypto.randomUUID(),
+        id: uuid(),
         role: "assistant",
         text: `Based on current section status and your inputs (priority: ${formData.priority}, destination: ${formData.destination}, position: ${formData.currentPosition}), here are recommended strategies:`,
       },
