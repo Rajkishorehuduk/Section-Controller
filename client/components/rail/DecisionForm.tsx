@@ -3,13 +3,32 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import type { Category, NewDecision, Priority, Station, Line, DecisionsResponse } from "@shared/api";
+import type {
+  Category,
+  NewDecision,
+  Priority,
+  Station,
+  Line,
+  DecisionsResponse,
+} from "@shared/api";
 import { toast } from "sonner";
 
-const categories: Category[] = ["Movement", "Maintenance", "Safety", "Power", "Emergency"];
+const categories: Category[] = [
+  "Movement",
+  "Maintenance",
+  "Safety",
+  "Power",
+  "Emergency",
+];
 const priorities: Priority[] = ["Low", "Normal", "High", "Critical"];
 const allStations: Station[] = [
   "Chandanpur",
@@ -43,7 +62,10 @@ export function DecisionForm() {
     },
   });
 
-  const loopsByStation: Record<string, number> = useMemo(() => ({ Chandanpur: 3, Gurap: 1, Masagram: 2 }), []);
+  const loopsByStation: Record<string, number> = useMemo(
+    () => ({ Chandanpur: 3, Gurap: 1, Masagram: 2 }),
+    [],
+  );
 
   const { data: decisionsData } = useQuery<DecisionsResponse>({
     queryKey: ["decisions"],
@@ -74,13 +96,18 @@ export function DecisionForm() {
   });
 
   const computedMessage = useMemo(() => {
-    const dir = (form as any).meta?.directive as undefined | "pass" | "halt" | "stable";
+    const dir = (form as any).meta?.directive as
+      | undefined
+      | "pass"
+      | "halt"
+      | "stable";
     const line = (form as any).meta?.passThroughLine as any;
     const loopStation = (form as any).meta?.loopStation as any;
     const loopId = (form as any).meta?.loopId as any;
 
     if (dir === "pass") {
-      if (line) return `Pass the train through via ${line} Line at target stations.`;
+      if (line)
+        return `Pass the train through via ${line} Line at target stations.`;
       return "Pass the train through the target stations.";
     }
     if (dir === "halt") {
@@ -101,8 +128,16 @@ export function DecisionForm() {
       message: computedMessage,
       effect: {
         loopAssignments:
-          form.meta?.loopStation && (form as any).meta?.loopId && form.meta?.consistNo
-            ? [{ station: form.meta.loopStation, loopId: Number((form as any).meta.loopId), train: form.meta.consistNo }]
+          form.meta?.loopStation &&
+          (form as any).meta?.loopId &&
+          form.meta?.consistNo
+            ? [
+                {
+                  station: form.meta.loopStation,
+                  loopId: Number((form as any).meta.loopId),
+                  train: form.meta.consistNo,
+                },
+              ]
             : undefined,
       },
     };
@@ -110,7 +145,13 @@ export function DecisionForm() {
   };
 
   return (
-    <form className="rounded-xl border bg-card text-card-foreground p-4 space-y-6" onSubmit={(e) => { e.preventDefault(); submit(); }}>
+    <form
+      className="rounded-xl border bg-card text-card-foreground p-4 space-y-6"
+      onSubmit={(e) => {
+        e.preventDefault();
+        submit();
+      }}
+    >
       <div>
         <h3 className="text-base font-semibold">Section Controller</h3>
         <p className="text-xs text-muted-foreground">CDAE - SKG SECTION</p>
@@ -119,19 +160,49 @@ export function DecisionForm() {
       <div className="grid gap-6">
         <div className="space-y-2">
           <Label>Consist No.</Label>
-          <Input placeholder="e.g. 13024" value={(form as any).meta?.consistNo ?? ""} onChange={(e) => setForm((f) => ({ ...f, meta: { ...f.meta, consistNo: e.target.value } }))} />
+          <Input
+            placeholder="e.g. 13024"
+            value={(form as any).meta?.consistNo ?? ""}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                meta: { ...f.meta, consistNo: e.target.value },
+              }))
+            }
+          />
         </div>
 
         <div className="space-y-2">
           <Label>Consist Destination</Label>
-          <Textarea placeholder="Destination details" value={(form as any).meta?.consistDestination ?? ""} onChange={(e) => setForm((f) => ({ ...f, meta: { ...f.meta, consistDestination: e.target.value } }))} />
+          <Textarea
+            placeholder="Destination details"
+            value={(form as any).meta?.consistDestination ?? ""}
+            onChange={(e) =>
+              setForm((f) => ({
+                ...f,
+                meta: { ...f.meta, consistDestination: e.target.value },
+              }))
+            }
+          />
         </div>
 
         <div className="space-y-2">
           <Label>Will be passed through</Label>
-          <RadioGroup value={(form as any).meta?.passThroughLine as any} onValueChange={(v) => setForm((f) => ({ ...f, meta: { ...f.meta, passThroughLine: v as Line } }))} className="grid sm:grid-cols-3 gap-2">
+          <RadioGroup
+            value={(form as any).meta?.passThroughLine as any}
+            onValueChange={(v) =>
+              setForm((f) => ({
+                ...f,
+                meta: { ...f.meta, passThroughLine: v as Line },
+              }))
+            }
+            className="grid sm:grid-cols-3 gap-2"
+          >
             {(["Up Main", "Reverse", "Down Main"] as Line[]).map((ln) => (
-              <label key={ln} className="flex items-center gap-2 rounded-md border p-2 cursor-pointer">
+              <label
+                key={ln}
+                className="flex items-center gap-2 rounded-md border p-2 cursor-pointer"
+              >
                 <RadioGroupItem value={ln} id={`ln-${ln}`} />
                 <span>{ln} Line</span>
               </label>
@@ -141,25 +212,54 @@ export function DecisionForm() {
 
         <div className="space-y-2">
           <Label>Station to be looped/stabled</Label>
-          <RadioGroup value={(form as any).meta?.loopStation as any} onValueChange={(v) => setForm((f) => ({ ...f, meta: { ...f.meta, loopStation: v as Station, loopId: 1 as any } }))} className="grid sm:grid-cols-4 gap-2">
+          <RadioGroup
+            value={(form as any).meta?.loopStation as any}
+            onValueChange={(v) =>
+              setForm((f) => ({
+                ...f,
+                meta: {
+                  ...f.meta,
+                  loopStation: v as Station,
+                  loopId: 1 as any,
+                },
+              }))
+            }
+            className="grid sm:grid-cols-4 gap-2"
+          >
             {["Chandanpur", "Gurap", "Masagram", "Saktigarh"].map((s) => (
-              <label key={s} className="flex items-center gap-2 rounded-md border p-2 cursor-pointer">
+              <label
+                key={s}
+                className="flex items-center gap-2 rounded-md border p-2 cursor-pointer"
+              >
                 <RadioGroupItem value={s} id={`st-${s}`} />
                 <span className="uppercase text-sm">{s}</span>
               </label>
             ))}
           </RadioGroup>
-          {(form as any).meta?.loopStation && loopsByStation[(form as any).meta.loopStation] ? (
+          {(form as any).meta?.loopStation &&
+          loopsByStation[(form as any).meta.loopStation] ? (
             <div className="grid sm:grid-cols-3 gap-3">
               <div className="space-y-2">
                 <Label>Loop</Label>
-                <Select value={String((form as any).meta?.loopId ?? 1)} onValueChange={(v) => setForm((f) => ({ ...f, meta: { ...f.meta, loopId: Number(v) as any } }))}>
+                <Select
+                  value={String((form as any).meta?.loopId ?? 1)}
+                  onValueChange={(v) =>
+                    setForm((f) => ({
+                      ...f,
+                      meta: { ...f.meta, loopId: Number(v) as any },
+                    }))
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select loop" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.from({ length: loopsByStation[(form as any).meta.loopStation] }).map((_, i) => (
-                      <SelectItem key={i + 1} value={String(i + 1)}>Loop {i + 1}</SelectItem>
+                    {Array.from({
+                      length: loopsByStation[(form as any).meta.loopStation],
+                    }).map((_, i) => (
+                      <SelectItem key={i + 1} value={String(i + 1)}>
+                        Loop {i + 1}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -175,33 +275,56 @@ export function DecisionForm() {
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Current Position</Label>
-            <Input placeholder="e.g. Passing Belmuri" value={(form as any).meta?.currentPosition ?? ""} onChange={(e) => setForm((f) => ({ ...f, meta: { ...f.meta, currentPosition: e.target.value } }))} />
+            <Input
+              placeholder="e.g. Passing Belmuri"
+              value={(form as any).meta?.currentPosition ?? ""}
+              onChange={(e) =>
+                setForm((f) => ({
+                  ...f,
+                  meta: { ...f.meta, currentPosition: e.target.value },
+                }))
+              }
+            />
           </div>
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label>Category</Label>
-            <Select value={form.category} onValueChange={(v) => setForm((f) => ({ ...f, category: v as Category }))}>
+            <Select
+              value={form.category}
+              onValueChange={(v) =>
+                setForm((f) => ({ ...f, category: v as Category }))
+              }
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select category" />
               </SelectTrigger>
               <SelectContent>
                 {categories.map((c) => (
-                  <SelectItem key={c} value={c}>{c}</SelectItem>
+                  <SelectItem key={c} value={c}>
+                    {c}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
           <div className="space-y-2">
             <Label>Priority</Label>
-            <Select value={form.priority} onValueChange={(v) => setForm((f) => ({ ...f, priority: v as Priority }))}>
+            <Select
+              value={form.priority}
+              onValueChange={(v) =>
+                setForm((f) => ({ ...f, priority: v as Priority }))
+              }
+            >
               <SelectTrigger>
                 <SelectValue placeholder="Select priority" />
               </SelectTrigger>
               <SelectContent>
                 {priorities.map((p) => (
-                  <SelectItem key={p} value={p}>{p}</SelectItem>
+                  <SelectItem key={p} value={p}>
+                    {p}
+                  </SelectItem>
                 ))}
               </SelectContent>
             </Select>
@@ -211,51 +334,130 @@ export function DecisionForm() {
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label>Directive to Station Masters</Label>
-            <Button type="button" variant="outline" size="sm" onClick={() => {
-              const loads: Record<Line, number> = { "Up Main": 0, "Down Main": 0, Reverse: 0 } as any;
-              const blocked: Partial<Record<Line, boolean>> = {};
-              const active = (decisionsData?.decisions ?? [])
-                .filter((d) => {
-                  const now = Date.now();
-                  const eff = new Date(d.effectiveAt).getTime();
-                  const exp = d.expiresAt ? new Date(d.expiresAt).getTime() : Infinity;
-                  return eff <= now && now < exp;
-                })
-                .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
-              for (const d of active) {
-                if (d.meta?.passThroughLine) loads[d.meta.passThroughLine] += 1;
-                if (d.effect?.lines) {
-                  for (const [ln, st] of Object.entries(d.effect.lines)) {
-                    if (st === "Blocked") blocked[ln as Line] = true;
-                    if (st === "Occupied" || st === "Maintenance") loads[ln as Line] = Math.max(loads[ln as Line], 1);
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                const loads: Record<Line, number> = {
+                  "Up Main": 0,
+                  "Down Main": 0,
+                  Reverse: 0,
+                } as any;
+                const blocked: Partial<Record<Line, boolean>> = {};
+                const active = (decisionsData?.decisions ?? [])
+                  .filter((d) => {
+                    const now = Date.now();
+                    const eff = new Date(d.effectiveAt).getTime();
+                    const exp = d.expiresAt
+                      ? new Date(d.expiresAt).getTime()
+                      : Infinity;
+                    return eff <= now && now < exp;
+                  })
+                  .sort(
+                    (a, b) =>
+                      new Date(a.createdAt).getTime() -
+                      new Date(b.createdAt).getTime(),
+                  );
+                for (const d of active) {
+                  if (d.meta?.passThroughLine)
+                    loads[d.meta.passThroughLine] += 1;
+                  if (d.effect?.lines) {
+                    for (const [ln, st] of Object.entries(d.effect.lines)) {
+                      if (st === "Blocked") blocked[ln as Line] = true;
+                      if (st === "Occupied" || st === "Maintenance")
+                        loads[ln as Line] = Math.max(loads[ln as Line], 1);
+                    }
+                  }
+                  const tc = d.meta?.trackClosure?.toLowerCase() || "";
+                  if (tc) {
+                    if (tc.includes("up") && tc.includes("main"))
+                      blocked["Up Main"] = true;
+                    if (tc.includes("down") && tc.includes("main"))
+                      blocked["Down Main"] = true;
+                    if (tc.includes("reverse")) blocked["Reverse"] = true;
                   }
                 }
-                const tc = d.meta?.trackClosure?.toLowerCase() || "";
-                if (tc) {
-                  if (tc.includes("up") && tc.includes("main")) blocked["Up Main"] = true;
-                  if (tc.includes("down") && tc.includes("main")) blocked["Down Main"] = true;
-                  if (tc.includes("reverse")) blocked["Reverse"] = true;
+                const candidateLines: Line[] = (
+                  ["Up Main", "Down Main", "Reverse"] as Line[]
+                ).filter((ln) => !blocked[ln]);
+                let best: Line | undefined =
+                  (form as any).meta?.passThroughLine &&
+                  !blocked[(form as any).meta?.passThroughLine]
+                    ? (form as any).meta?.passThroughLine
+                    : candidateLines.sort((a, b) => loads[a] - loads[b])[0];
+                if (!best) {
+                  // all blocked => halt or stable if loop available
+                  const loopCandidate =
+                    (form as any).meta?.loopStation ||
+                    (["Chandanpur", "Masagram", "Gurap", "Saktigarh"].find(
+                      (s) => form.targets.includes(s as Station),
+                    ) as Station | undefined);
+                  if (loopCandidate)
+                    setForm((f) => ({
+                      ...f,
+                      meta: {
+                        ...f.meta,
+                        directive: "stable" as any,
+                        loopStation: loopCandidate,
+                        loopId: 1 as any,
+                      },
+                    }));
+                  else
+                    setForm((f) => ({
+                      ...f,
+                      meta: { ...f.meta, directive: "halt" as any },
+                    }));
+                  return;
                 }
-              }
-              const candidateLines: Line[] = (["Up Main","Down Main","Reverse"] as Line[]).filter((ln) => !blocked[ln]);
-              let best: Line | undefined = (form as any).meta?.passThroughLine && !blocked[(form as any).meta?.passThroughLine] ? (form as any).meta?.passThroughLine : candidateLines.sort((a,b) => loads[a]-loads[b])[0];
-              if (!best) {
-                // all blocked => halt or stable if loop available
-                const loopCandidate = (form as any).meta?.loopStation || (["Chandanpur","Masagram","Gurap","Saktigarh"].find((s) => form.targets.includes(s as Station)) as Station | undefined);
-                if (loopCandidate) setForm((f) => ({ ...f, meta: { ...f.meta, directive: "stable" as any, loopStation: loopCandidate, loopId: 1 as any } }));
-                else setForm((f) => ({ ...f, meta: { ...f.meta, directive: "halt" as any } }));
-                return;
-              }
-              if (loads[best] >= 3 || (loads[best] >= 2 && form.priority !== "Low")) {
-                const loopCandidate = (form as any).meta?.loopStation || (["Chandanpur","Masagram","Gurap","Saktigarh"].find((s) => form.targets.includes(s as Station)) as Station | undefined);
-                if (loopCandidate) setForm((f) => ({ ...f, meta: { ...f.meta, directive: "stable" as any, loopStation: loopCandidate, loopId: 1 as any } }));
-                else setForm((f) => ({ ...f, meta: { ...f.meta, directive: "halt" as any } }));
-              } else {
-                setForm((f) => ({ ...f, meta: { ...f.meta, directive: "pass" as any, passThroughLine: best } }));
-              }
-            }}>Suggest with AI</Button>
+                if (
+                  loads[best] >= 3 ||
+                  (loads[best] >= 2 && form.priority !== "Low")
+                ) {
+                  const loopCandidate =
+                    (form as any).meta?.loopStation ||
+                    (["Chandanpur", "Masagram", "Gurap", "Saktigarh"].find(
+                      (s) => form.targets.includes(s as Station),
+                    ) as Station | undefined);
+                  if (loopCandidate)
+                    setForm((f) => ({
+                      ...f,
+                      meta: {
+                        ...f.meta,
+                        directive: "stable" as any,
+                        loopStation: loopCandidate,
+                        loopId: 1 as any,
+                      },
+                    }));
+                  else
+                    setForm((f) => ({
+                      ...f,
+                      meta: { ...f.meta, directive: "halt" as any },
+                    }));
+                } else {
+                  setForm((f) => ({
+                    ...f,
+                    meta: {
+                      ...f.meta,
+                      directive: "pass" as any,
+                      passThroughLine: best,
+                    },
+                  }));
+                }
+              }}
+            >
+              Suggest with AI
+            </Button>
           </div>
-          <Select value={(form as any).meta?.directive ?? "pass"} onValueChange={(v) => setForm((f) => ({ ...f, meta: { ...f.meta, directive: v as any } }))}>
+          <Select
+            value={(form as any).meta?.directive ?? "pass"}
+            onValueChange={(v) =>
+              setForm((f) => ({
+                ...f,
+                meta: { ...f.meta, directive: v as any },
+              }))
+            }
+          >
             <SelectTrigger>
               <SelectValue placeholder="Select directive" />
             </SelectTrigger>
@@ -274,7 +476,19 @@ export function DecisionForm() {
             {allStations.map((s) => {
               const active = form.targets.includes(s);
               return (
-                <Button key={s} type="button" variant={active ? "default" : "outline"} onClick={() => setForm((f) => ({ ...f, targets: active ? f.targets.filter((x) => x !== s) : [...f.targets, s] }))}>
+                <Button
+                  key={s}
+                  type="button"
+                  variant={active ? "default" : "outline"}
+                  onClick={() =>
+                    setForm((f) => ({
+                      ...f,
+                      targets: active
+                        ? f.targets.filter((x) => x !== s)
+                        : [...f.targets, s],
+                    }))
+                  }
+                >
                   {s}
                 </Button>
               );
@@ -284,7 +498,10 @@ export function DecisionForm() {
       </div>
 
       <div className="flex items-center justify-end gap-3">
-        <Button type="submit" disabled={mutation.isPending || !computedMessage.trim()}>
+        <Button
+          type="submit"
+          disabled={mutation.isPending || !computedMessage.trim()}
+        >
           {mutation.isPending ? "Issuing..." : "Issue Decision"}
         </Button>
       </div>

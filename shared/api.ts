@@ -65,7 +65,10 @@ export interface Decision {
   effectiveAt: string; // ISO
   expiresAt: string | null; // ISO or null
   author: string;
-  acknowledgements: Record<Station, { acknowledged: boolean; at: string | null }>;
+  acknowledgements: Record<
+    Station,
+    { acknowledged: boolean; at: string | null }
+  >;
   effect?: DecisionEffect;
   meta?: DecisionMeta;
 }
