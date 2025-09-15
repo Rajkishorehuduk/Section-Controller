@@ -293,7 +293,42 @@ export function AIAssistant() {
             {alternatives.length > 0 && (
               <div className="space-y-2">
                 <Separator />
-                <div className="text-xs text-muted-foreground">Suggested strategies</div>
+                <div className="flex items-center justify-between">
+                  <div className="text-xs text-muted-foreground">Suggested strategies</div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={async () => {
+                      try {
+                        const r = await fetch("/api/ai/plan", {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ live, inputs: formData }),
+                        });
+                        const data = await r.json();
+                        if (Array.isArray(data?.alternatives) && data.alternatives.length) {
+                          setAlternatives(data.alternatives);
+                          setMessages((m) => [
+                            ...m,
+                            { id: crypto.randomUUID(), role: "assistant", text: "Here is a Gemini-assisted plan with detailed rationale." },
+                          ]);
+                        } else {
+                          setMessages((m) => [
+                            ...m,
+                            { id: crypto.randomUUID(), role: "assistant", text: "Gemini could not produce a plan for the current inputs." },
+                          ]);
+                        }
+                      } catch (e) {
+                        setMessages((m) => [
+                          ...m,
+                          { id: crypto.randomUUID(), role: "assistant", text: "AI request failed. Please try again." },
+                        ]);
+                      }
+                    }}
+                  >
+                    Ask Gemini Plan
+                  </Button>
+                </div>
                 {alternatives.map((alt) => (
                   <div key={alt.key} className="rounded-md border p-3">
                     <div className="text-sm font-medium">{alt.title}</div>
