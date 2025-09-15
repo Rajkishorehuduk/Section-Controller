@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -94,6 +94,29 @@ export function DecisionForm() {
     },
     onError: (e: any) => toast.error(e?.message ?? "Error"),
   });
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent;
+      const detail: any = (ce.detail as any) || {};
+      setForm((f) => ({
+        ...f,
+        priority: (detail.priority as any) ?? f.priority,
+        meta: { ...f.meta, ...(detail.meta || {}) },
+      }));
+      toast.info("Applied AI recommendation");
+    };
+    window.addEventListener(
+      "ai-recommendation-apply",
+      handler as EventListener,
+    );
+    return () => {
+      window.removeEventListener(
+        "ai-recommendation-apply",
+        handler as EventListener,
+      );
+    };
+  }, []);
 
   const computedMessage = useMemo(() => {
     const dir = (form as any).meta?.directive as
