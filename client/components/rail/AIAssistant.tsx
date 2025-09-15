@@ -221,7 +221,7 @@ export function AIAssistant() {
       setMessages((m) => [
         ...m,
         {
-          id: crypto.randomUUID(),
+          id: uuid(),
           role: "assistant",
           text: "Destination station?",
           chips: stations.slice(0, 6).map((s) => ({ label: s, value: s })),
