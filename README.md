@@ -83,18 +83,3 @@ npm run lint
 
 ## Contributing
 Pull requests are welcome! For major changes, please open an issue first to discuss what you would like to change.
-
-## Contributors
-
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
-
-<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
-<!-- ALL-CONTRIBUTORS-LIST:END -->
-
-This project follows the [all-contributors](https://allcontributors.org) specification. Contributions of any kind are welcome! To add yourself, comment on a PR or issue with:
-
-```
-@All-Contributors please add <username> for <contribution-type>
-```
-
-Or use the [All Contributors bot](https://allcontributors.org/docs/en/bot/usage) for automatic updates.
