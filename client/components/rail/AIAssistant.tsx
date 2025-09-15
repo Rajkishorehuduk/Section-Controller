@@ -45,6 +45,14 @@ const stations: Station[] = [
 ];
 const loopStations: Station[] = ["Chandanpur", "Masagram", "Gurap", "Saktigarh"];
 
+const uuid = () => {
+  try {
+    // @ts-ignore
+    if (typeof crypto !== "undefined" && typeof (crypto as any).randomUUID === "function") return (crypto as any).randomUUID();
+  } catch {}
+  return Math.random().toString(36).slice(2);
+};
+
 export function AIAssistant() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMsg[]>([]);
@@ -196,7 +204,7 @@ export function AIAssistant() {
   const onSend = (value: string) => {
     const v = value.trim();
     if (!v) return;
-    setMessages((m) => [...m, { id: crypto.randomUUID(), role: "user", text: v }]);
+    setMessages((m) => [...m, { id: uuid(), role: "user", text: v }]);
     const extracted = parseAndUpdate(v);
     const merged = { ...formData, ...extracted };
 
@@ -316,13 +324,13 @@ export function AIAssistant() {
                           } else {
                             setMessages((m) => [
                               ...m,
-                              { id: crypto.randomUUID(), role: "assistant", text: "Gemini could not produce a plan for the current inputs." },
+                              { id: uuid(), role: "assistant", text: "Gemini could not produce a plan for the current inputs." },
                             ]);
                           }
                         } catch (e) {
                           setMessages((m) => [
                             ...m,
-                            { id: crypto.randomUUID(), role: "assistant", text: "AI request failed. Please try again." },
+                            { id: uuid(), role: "assistant", text: "AI request failed. Please try again." },
                           ]);
                         }
                       }}
