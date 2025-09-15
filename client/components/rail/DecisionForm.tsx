@@ -96,8 +96,9 @@ export function DecisionForm() {
   });
 
   useEffect(() => {
-    const handler = (e: CustomEvent) => {
-      const detail: any = e.detail || {};
+    const handler = (e: Event) => {
+      const ce = e as CustomEvent;
+      const detail: any = (ce.detail as any) || {};
       setForm((f) => ({
         ...f,
         priority: (detail.priority as any) ?? f.priority,
@@ -105,11 +106,9 @@ export function DecisionForm() {
       }));
       toast.info("Applied AI recommendation");
     };
-    // @ts-expect-error Custom event typing
-    window.addEventListener("ai-recommendation-apply", handler);
+    window.addEventListener("ai-recommendation-apply", handler as EventListener);
     return () => {
-      // @ts-expect-error Custom event typing
-      window.removeEventListener("ai-recommendation-apply", handler);
+      window.removeEventListener("ai-recommendation-apply", handler as EventListener);
     };
   }, []);
 
