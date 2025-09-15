@@ -233,7 +233,7 @@ export function AIAssistant() {
       setMessages((m) => [
         ...m,
         {
-          id: crypto.randomUUID(),
+          id: uuid(),
           role: "assistant",
           text: "Current position (e.g., 'Passing Belmuri' or 'At Masagram')?",
         },
