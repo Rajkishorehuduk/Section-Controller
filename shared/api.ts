@@ -52,6 +52,7 @@ export interface DecisionMeta {
   loopId?: number;
   trackClosure?: string;
   currentPosition?: string;
+  directive?: "pass" | "halt" | "stable";
 }
 
 export interface Decision {
