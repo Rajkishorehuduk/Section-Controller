@@ -1,21 +1,19 @@
-import { useMemo, useState } from "react";
-import { Bot, LineChart, PlayCircle, Wand2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { Bot, Send, Wand2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import type { DecisionsResponse, Line, Priority, Station } from "@shared/api";
 import { cn } from "@/lib/utils";
 
-interface ScenarioInputs {
-  priority: Priority;
-  blocked: Partial<Record<Line, boolean>>;
-  extraLoad: Partial<Record<Line, number>>; // simulated extra trains on line
-  preferLoopAt?: Station;
+type Role = "assistant" | "user";
+interface ChatMsg {
+  id: string;
+  role: Role;
+  text: string;
+  chips?: { label: string; value: string }[];
 }
 
 interface Alternative {
@@ -25,23 +23,35 @@ interface Alternative {
   passThroughLine?: Line;
   loopStation?: Station;
   loopId?: number;
-  expectedDelay: number; // minutes
-  risk: number; // 0-100
   explanation: string;
 }
 
 const allLines: Line[] = ["Up Main", "Down Main", "Reverse"];
+const stations: Station[] = [
+  "Chandanpur",
+  "Porabazar",
+  "Belmuri",
+  "Dhaniakhali Halt",
+  "Sibaichandi",
+  "Hajigarh",
+  "Gurap",
+  "Jhapandanga",
+  "Jaugram",
+  "Nabagram",
+  "Masagram",
+  "Chanchai",
+  "Palla Road",
+  "Saktigarh",
+];
 const loopStations: Station[] = ["Chandanpur", "Masagram", "Gurap", "Saktigarh"];
 
 export function AIAssistant() {
   const [open, setOpen] = useState(false);
-  const [inputs, setInputs] = useState<ScenarioInputs>({
-    priority: "Normal",
-    blocked: {},
-    extraLoad: {},
-    preferLoopAt: undefined,
-  });
-  const [results, setResults] = useState<{ alternatives: Alternative[]; recommendation?: Alternative }>();
+  const [messages, setMessages] = useState<ChatMsg[]>([]);
+  const [input, setInput] = useState("");
+  const [formData, setFormData] = useState<{ priority?: Priority; destination?: Station; currentPosition?: string }>({});
+  const [alternatives, setAlternatives] = useState<Alternative[]>([]);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const { data: decisionsData } = useQuery<DecisionsResponse>({
     queryKey: ["decisions"],
@@ -50,108 +60,192 @@ export function AIAssistant() {
       if (!res.ok) throw new Error("Failed to load decisions");
       return res.json();
     },
-    refetchInterval: 10000,
+    refetchInterval: 5000,
   });
 
-  const loadsFromLive = useMemo(() => {
-    const loads: Record<Line, number> = {
-      "Up Main": 0,
-      "Down Main": 0,
-      Reverse: 0,
-    } as any;
+  const live = useMemo(() => {
+    const loads: Record<Line, number> = { "Up Main": 0, "Down Main": 0, Reverse: 0 } as any;
     const blocked: Partial<Record<Line, boolean>> = {};
-    const active = (decisionsData?.decisions ?? [])
-      .filter((d) => {
-        const now = Date.now();
-        const eff = new Date(d.effectiveAt).getTime();
-        const exp = d.expiresAt ? new Date(d.expiresAt).getTime() : Infinity;
-        return eff <= now && now < exp;
-      })
-      .sort(
-        (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
-      );
+    const now = Date.now();
+    const active = (decisionsData?.decisions ?? []).filter((d) => {
+      const eff = new Date(d.effectiveAt).getTime();
+      const exp = d.expiresAt ? new Date(d.expiresAt).getTime() : Infinity;
+      return eff <= now && now < exp;
+    });
     for (const d of active) {
       if (d.meta?.passThroughLine) loads[d.meta.passThroughLine] += 1;
       if (d.effect?.lines) {
         for (const [ln, st] of Object.entries(d.effect.lines)) {
           if (st === "Blocked") blocked[ln as Line] = true;
-          if (st === "Occupied" || st === "Maintenance")
-            loads[ln as Line] = Math.max(loads[ln as Line], 1);
+          if (st === "Occupied" || st === "Maintenance") loads[ln as Line] = Math.max(loads[ln as Line], 1);
         }
       }
       const tc = d.meta?.trackClosure?.toLowerCase() || "";
-      if (tc) {
-        if (tc.includes("up") && tc.includes("main")) blocked["Up Main"] = true;
-        if (tc.includes("down") && tc.includes("main")) blocked["Down Main"] = true;
-        if (tc.includes("reverse")) blocked["Reverse"] = true;
-      }
+      if (tc.includes("up") && tc.includes("main")) blocked["Up Main"] = true;
+      if (tc.includes("down") && tc.includes("main")) blocked["Down Main"] = true;
+      if (tc.includes("reverse")) blocked["Reverse"] = true;
     }
     return { loads, blocked };
   }, [decisionsData]);
 
-  const runAnalysis = () => {
-    const baseLoads = { ...loadsFromLive.loads } as Record<Line, number>;
-    const blocked = { ...loadsFromLive.blocked, ...inputs.blocked } as Record<Line, boolean>;
-    for (const ln of allLines) baseLoads[ln] = (baseLoads[ln] || 0) + (inputs.extraLoad[ln] || 0);
+  useEffect(() => {
+    if (!open) return;
+    const summary = `Live occupancy — Up: ${live.loads["Up Main"] ?? 0}, Down: ${live.loads["Down Main"] ?? 0}, Reverse: ${live.loads["Reverse"] ?? 0}. Blocked: ${allLines
+      .filter((l) => live.blocked[l])
+      .join(", ") || "None"}.`;
+    const intro: ChatMsg = {
+      id: "intro",
+      role: "assistant",
+      text: `${summary} What is the train priority?`;
+      chips: [
+        { label: "Low", value: "Low" },
+        { label: "Normal", value: "Normal" },
+        { label: "High", value: "High" },
+        { label: "Critical", value: "Critical" },
+      ],
+    } as any;
+    setMessages([intro]);
+    setAlternatives([]);
+    setFormData({});
+  }, [open]);
 
-    const candidates: Alternative[] = [];
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages.length]);
 
-    // Pass-through options
-    for (const ln of allLines) {
-      if (blocked[ln]) continue;
-      const load = baseLoads[ln] || 0;
-      const delay = Math.max(0, load - 1) * 5; // 5 min per train queued beyond 1
-      const risk = Math.min(100, load * 20);
-      candidates.push({
-        key: `pass-${ln}`,
-        title: `Pass via ${ln} Line`,
+  const parseAndUpdate = (text: string) => {
+    const next: Partial<typeof formData> = {};
+    const t = text.toLowerCase();
+    const prioMap: Record<string, Priority> = { low: "Low", normal: "Normal", medium: "Normal", high: "High", critical: "Critical" } as any;
+    for (const k of Object.keys(prioMap)) {
+      if (t.includes(k)) next.priority = prioMap[k];
+    }
+    const hit = stations.find((s) => t.includes(s.toLowerCase()));
+    if (hit) next.destination = hit;
+    const posMatch = text.match(/(at|near|passing)\s+([A-Za-z\s]+)$/i);
+    if (posMatch) next.currentPosition = posMatch[2].trim();
+    if (Object.keys(next).length) setFormData((s) => ({ ...s, ...next }));
+  };
+
+  const getBestLine = () => {
+    const avail = allLines.filter((l) => !live.blocked[l]);
+    if (!avail.length) return undefined;
+    return avail.sort((a, b) => (live.loads[a] || 0) - (live.loads[b] || 0))[0];
+  };
+
+  const proposeStrategies = () => {
+    if (!formData.priority || !formData.destination || !formData.currentPosition) return;
+    const best = getBestLine();
+    const loopAt = loopStations.includes(formData.destination) ? formData.destination : loopStations[0];
+
+    const list: Alternative[] = [];
+
+    if (best) {
+      list.push({
+        key: `pass-${best}`,
+        title: `Pass-through via ${best}`,
         directive: "pass",
-        passThroughLine: ln,
-        expectedDelay: delay,
-        risk,
-        explanation: `Current load on ${ln} is ${load}. Estimated delay ${delay} min. No blockages reported in scenario.`,
+        passThroughLine: best,
+        explanation: `Lowest live load on ${best}. Suitable for ${formData.priority} priority.`,
       });
     }
 
-    // Stable option (loop)
-    const loopAt = inputs.preferLoopAt || loopStations[0];
-    candidates.push({
-      key: `stable-${loopAt}`,
-      title: `Stable at ${loopAt}`,
+    list.push({
+      key: `cross-${loopAt}`,
+      title: `Crossing at ${loopAt}`,
       directive: "stable",
       loopStation: loopAt,
       loopId: 1,
-      expectedDelay: 10,
-      risk: inputs.priority === "Low" ? 15 : inputs.priority === "Normal" ? 25 : 40,
-      explanation: `Use loop at ${loopAt} to deconflict main lines. Suitable when main lines are saturated or blocked.`,
+      explanation: `Hold at ${loopAt} loop to allow opposing movement to pass safely, then proceed.`,
     });
 
-    // Halt option
-    candidates.push({
-      key: `halt`,
-      title: "Halt at target station",
-      directive: "halt",
-      expectedDelay: inputs.priority === "High" || inputs.priority === "Critical" ? 20 : 12,
-      risk: inputs.priority === "High" || inputs.priority === "Critical" ? 65 : 45,
-      explanation: `Halt reduces immediate risk but increases delay. Consider only if all lines are constrained.`,
+    list.push({
+      key: `precedence-${best || "line"}`,
+      title: `Precedence to higher-priority movement`,
+      directive: best ? "pass" : "stable",
+      passThroughLine: best,
+      loopStation: !best ? loopAt : undefined,
+      loopId: !best ? 1 : undefined,
+      explanation: formData.priority === "Low" || formData.priority === "Normal"
+        ? `Yield by waiting at ${loopAt} to clear main line, then proceed via ${best || "available line"}.`
+        : `Proceed via ${best || "available line"} and instruct lower-priority movements to hold.`,
     });
 
-    // Score and pick recommendation
-    const score = (a: Alternative) => {
-      const prio = inputs.priority;
-      const delayW = prio === "Critical" ? 0.7 : prio === "High" ? 0.6 : prio === "Normal" ? 0.5 : 0.4;
-      const riskW = 1 - delayW;
-      return -(a.expectedDelay * delayW + a.risk * riskW);
-    };
+    list.push({
+      key: `overtake-${loopAt}`,
+      title: `Overtake at ${loopAt}`,
+      directive: "stable",
+      loopStation: loopAt,
+      loopId: 1,
+      explanation: `Stage at ${loopAt} to allow faster consist to overtake, reducing following delays.`,
+    });
 
-    const sorted = candidates.sort((a, b) => score(b) - score(a));
-    const recommendation = sorted[0];
-    setResults({ alternatives: sorted, recommendation });
+    setAlternatives(list);
+
+    setMessages((m) => [
+      ...m,
+      {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        text: `Based on current section status and your inputs (priority: ${formData.priority}, destination: ${formData.destination}, position: ${formData.currentPosition}), here are recommended strategies:`,
+      },
+    ]);
+  };
+
+  const onSend = (value: string) => {
+    const v = value.trim();
+    if (!v) return;
+    setMessages((m) => [...m, { id: crypto.randomUUID(), role: "user", text: v }]);
+    parseAndUpdate(v);
+
+    setTimeout(() => {
+      if (!formData.priority) {
+        setMessages((m) => [
+          ...m,
+          {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            text: "Got it. What's the train priority?",
+            chips: [
+              { label: "Low", value: "Low" },
+              { label: "Normal", value: "Normal" },
+              { label: "High", value: "High" },
+              { label: "Critical", value: "Critical" },
+            ],
+          },
+        ]);
+        return;
+      }
+      if (!formData.destination) {
+        setMessages((m) => [
+          ...m,
+          {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            text: "Destination station?",
+            chips: stations.slice(0, 6).map((s) => ({ label: s, value: s })),
+          },
+        ]);
+        return;
+      }
+      if (!formData.currentPosition) {
+        setMessages((m) => [
+          ...m,
+          {
+            id: crypto.randomUUID(),
+            role: "assistant",
+            text: "Current position (e.g., 'Passing Belmuri' or 'At Masagram')?",
+          },
+        ]);
+        return;
+      }
+      proposeStrategies();
+    }, 50);
   };
 
   const applyAlternative = (alt: Alternative) => {
     const detail: any = {
-      priority: inputs.priority,
+      priority: formData.priority,
       meta: {
         directive: alt.directive,
         passThroughLine: alt.passThroughLine,
@@ -164,161 +258,79 @@ export function AIAssistant() {
     setOpen(false);
   };
 
+  const onChip = (value: string) => {
+    onSend(value);
+  };
+
   return (
     <>
       <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="right" className="w-full sm:max-w-lg overflow-y-auto">
-          <SheetHeader>
-            <SheetTitle className="flex items-center gap-2">
-              <Bot className="h-5 w-5 text-primary" /> Rail AI Assistant
-            </SheetTitle>
-          </SheetHeader>
+        <SheetContent side="right" className="w-full sm:max-w-md p-0 flex flex-col">
+          <div className="p-4 border-b">
+            <SheetHeader>
+              <SheetTitle className="flex items-center gap-2">
+                <Bot className="h-5 w-5 text-primary" /> Rail AI Assistant
+              </SheetTitle>
+            </SheetHeader>
+          </div>
 
-          <div className="mt-4 space-y-6">
-            <div className="rounded-lg border p-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Priority</Label>
-                  <Select
-                    value={inputs.priority}
-                    onValueChange={(v) => setInputs((s) => ({ ...s, priority: v as Priority }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select priority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {(["Low", "Normal", "High", "Critical"] as Priority[]).map((p) => (
-                        <SelectItem key={p} value={p}>
-                          {p}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>Prefer Loop At</Label>
-                  <Select
-                    value={inputs.preferLoopAt as any}
-                    onValueChange={(v) => setInputs((s) => ({ ...s, preferLoopAt: v as Station }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select station" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {loopStations.map((s) => (
-                        <SelectItem key={s} value={s}>
-                          {s}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <Separator className="my-4" />
-              <div className="grid gap-4">
-                <div className="grid grid-cols-2 gap-3">
-                  {allLines.map((ln) => (
-                    <div key={ln} className="flex items-center justify-between rounded-md border p-2">
-                      <div className="space-y-1">
-                        <div className="text-sm font-medium">Block {ln}</div>
-                        <div className="text-xs text-muted-foreground">Simulate track closure</div>
-                      </div>
-                      <Switch
-                        checked={!!inputs.blocked[ln]}
-                        onCheckedChange={(c) =>
-                          setInputs((s) => ({
-                            ...s,
-                            blocked: { ...s.blocked, [ln]: c || undefined },
-                          }))
-                        }
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="space-y-3">
-                  <div className="text-sm font-medium flex items-center gap-2">
-                    <LineChart className="h-4 w-4" /> Simulate mainline load
-                  </div>
-                  {allLines.map((ln) => (
-                    <div key={ln} className="space-y-1">
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{ln}</span>
-                        <span>+{inputs.extraLoad[ln] || 0} trains</span>
-                      </div>
-                      <Slider
-                        min={0}
-                        max={3}
-                        step={1}
-                        value={[inputs.extraLoad[ln] || 0]}
-                        onValueChange={(v) =>
-                          setInputs((s) => ({
-                            ...s,
-                            extraLoad: { ...s.extraLoad, [ln]: v[0] },
-                          }))
-                        }
-                      />
-                    </div>
-                  ))}
-                </div>
-
-                <Button className="w-full" onClick={runAnalysis}>
-                  <PlayCircle className="h-4 w-4 mr-2" /> Run Scenario Analysis
-                </Button>
-              </div>
-            </div>
-
-            {results && (
-              <div className="space-y-4">
-                <div className="rounded-lg border p-3 bg-secondary/30">
-                  <div className="text-sm text-muted-foreground">Recommendation</div>
-                  <div className="mt-1 font-semibold">{results.recommendation?.title}</div>
-                  <div className="text-xs text-muted-foreground mt-1">
-                    {results.recommendation?.explanation}
-                  </div>
-                  <div className="flex gap-2 mt-3">
-                    <Button size="sm" onClick={() => results.recommendation && applyAlternative(results.recommendation)}>
-                      Apply to Decision
-                    </Button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="text-sm font-medium">Alternatives</div>
-                  <div className="grid gap-2">
-                    {results.alternatives.map((alt) => (
-                      <div key={alt.key} className={cn("rounded-md border p-3", alt.key === results.recommendation?.key ? "border-primary" : undefined)}>
-                        <div className="flex items-center justify-between">
-                          <div className="font-medium text-sm">{alt.title}</div>
-                          <div className="text-xs text-muted-foreground">Delay ~ {alt.expectedDelay}m · Risk {alt.risk}%</div>
-                        </div>
-                        <div className="text-xs text-muted-foreground mt-1">{alt.explanation}</div>
-                        <div className="flex gap-2 mt-2">
-                          <Button size="sm" variant={alt.key === results.recommendation?.key ? "default" : "outline"} onClick={() => applyAlternative(alt)}>
-                            Use This
-                          </Button>
-                        </div>
-                      </div>
+          <div ref={scrollRef} className="flex-1 overflow-y-auto p-4 space-y-3">
+            {messages.map((m) => (
+              <div key={m.id} className={cn("max-w-[85%] rounded-lg p-3 text-sm", m.role === "assistant" ? "bg-secondary text-foreground" : "ml-auto bg-primary text-primary-foreground")}> 
+                <div>{m.text}</div>
+                {m.chips && (
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {m.chips.map((c, i) => (
+                      <Button key={`${m.id}-${i}`} size="sm" variant="outline" onClick={() => onChip(c.value)}>
+                        {c.label}
+                      </Button>
                     ))}
                   </div>
-                </div>
+                )}
               </div>
-            )}
+            ))}
 
-            {!results && (
-              <div className="rounded-lg border p-4 text-sm text-muted-foreground">
-                Configure a what-if scenario and run analysis to get recommendations. The assistant compares pass-through, halt, and stable strategies across lines with live section load and your simulated constraints.
+            {alternatives.length > 0 && (
+              <div className="space-y-2">
+                <Separator />
+                <div className="text-xs text-muted-foreground">Suggested strategies</div>
+                {alternatives.map((alt) => (
+                  <div key={alt.key} className="rounded-md border p-3">
+                    <div className="text-sm font-medium">{alt.title}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{alt.explanation}</div>
+                    <div className="mt-2">
+                      <Button size="sm" onClick={() => applyAlternative(alt)}>Apply to Decision</Button>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
+          </div>
+
+          <div className="p-3 border-t">
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const v = input;
+                setInput("");
+                onSend(v);
+              }}
+              className="flex items-center gap-2"
+            >
+              <Input
+                placeholder="Type here... (e.g., High priority to Saktigarh, passing Belmuri)"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+              />
+              <Button type="submit" size="icon">
+                <Send className="h-4 w-4" />
+              </Button>
+            </form>
           </div>
         </SheetContent>
       </Sheet>
 
-      <Button
-        className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg"
-        onClick={() => setOpen(true)}
-      >
+      <Button className="fixed bottom-6 right-6 h-12 w-12 rounded-full shadow-lg" onClick={() => setOpen(true)}>
         <Wand2 className="h-5 w-5" />
         <span className="sr-only">Open Rail AI Assistant</span>
       </Button>
