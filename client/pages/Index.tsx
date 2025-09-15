@@ -2,6 +2,7 @@ import { DecisionForm } from "@/components/rail/DecisionForm";
 import { DecisionList } from "@/components/rail/DecisionList";
 import { SectionStatus } from "@/components/rail/SectionStatus";
 import { TrackClosureReport } from "@/components/rail/TrackClosureReport";
+import { AIAssistant } from "@/components/rail/AIAssistant";
 
 export default function Index() {
   return (
@@ -18,6 +19,7 @@ export default function Index() {
           </div>
         </div>
       </div>
+      <AIAssistant />
     </div>
   );
 }
