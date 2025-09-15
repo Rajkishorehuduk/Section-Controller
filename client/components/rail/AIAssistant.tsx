@@ -101,7 +101,7 @@ export function AIAssistant() {
       if (blocked[ln]) continue;
       const load = baseLoads[ln] || 0;
       const delay = Math.max(0, load - 1) * 5; // 5 min per train queued beyond 1
-      const risk = Math.min(100, load * 20 + (inputs.priorityWeight === undefined ? 0 : 0));
+      const risk = Math.min(100, load * 20);
       candidates.push({
         key: `pass-${ln}`,
         title: `Pass via ${ln} Line`,
