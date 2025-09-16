@@ -4,8 +4,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
 import type { DecisionsResponse, Decision, Line, Status, Station } from "@shared/api";
+import { useMemo, useState } from "react";
 
 const statusColor: Record<Status, string> = {
   Free: "bg-emerald-500",
