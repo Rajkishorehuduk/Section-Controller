@@ -24,6 +24,33 @@ if (typeof window !== "undefined" && (window as any).ResizeObserver) {
   }
 }
 
+// Additionally filter global error events to stop noisy ResizeObserver messages
+if (typeof window !== "undefined") {
+  window.addEventListener("error", (ev: ErrorEvent) => {
+    const msg = ev?.message || (ev?.error && ev.error.message);
+    if (
+      typeof msg === "string" &&
+      msg.includes("ResizeObserver loop completed with undelivered notifications")
+    ) {
+      try {
+        ev.preventDefault();
+        // stop propagation to avoid other handlers
+        ev.stopImmediatePropagation?.();
+      } catch {}
+    }
+  });
+
+  window.addEventListener("unhandledrejection", (ev: PromiseRejectionEvent) => {
+    const reason = ev?.reason;
+    const msg = reason && (reason.message || reason.toString && reason.toString());
+    if (typeof msg === "string" && msg.includes("ResizeObserver loop completed with undelivered notifications")) {
+      try {
+        ev.preventDefault();
+      } catch {}
+    }
+  });
+}
+
 import "./global.css";
 
 import { Toaster } from "@/components/ui/toaster";
