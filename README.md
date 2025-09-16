@@ -190,16 +190,3 @@ Our approach is grounded in:
 - Case studies of global railway modernization
 
 ---
-
-## 🤝 Contributing
-
-Contributions are welcome!
-
-Open an issue for feature requests or bug reports.
-
-Submit PRs with detailed descriptions.
-
----
-
-
-
