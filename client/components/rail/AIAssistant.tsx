@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { Bot, Wand2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -95,36 +96,72 @@ export function AIAssistant() {
     setCategoryChoice("");
   };
 
-  const submit = () => {
-    // Map Google Priority to internal Priority type
-    const mappedPriority: Priority =
-      priority === "High" ? "High" : priority === "Medium" ? "Normal" : "Low";
+  const submit = async () => {
+    try {
+      const mappedPriority: Priority =
+        priority === "High" ? "High" : priority === "Medium" ? "Normal" : "Low";
 
-    const meta: any = {
-      trainType,
-      consistDestination: destination,
-      direction: direction || undefined,
-      currentStationCode: currentStationCode || undefined,
-    };
-
-    if (categoryChoice === "Pass Through") {
-      meta.directive = "pass";
-      meta.passThroughLine = lineFromDirection(direction || undefined);
-    } else if (categoryChoice === "Loop at Some Station") {
-      meta.directive = "stable";
-      const stationName = stationCodeOptions.find(
-        (s) => s.code === currentStationCode,
-      )?.name as Station | undefined;
-      if (stationName) {
-        meta.loopStation = stationName;
-        meta.loopId = 1;
+      const res = await fetch("/api/ai/plan", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          live,
+          inputs: {
+            priority: mappedPriority,
+            destination,
+            currentPosition: currentStationCode
+              ? `At ${currentStationCode}`
+              : undefined,
+          },
+        }),
+      });
+      if (!res.ok) {
+        const msg = await res.text();
+        throw new Error(msg || "AI service failed");
       }
-    }
+      const data: any = await res.json();
+      const alt = Array.isArray(data?.alternatives)
+        ? data.alternatives[0]
+        : null;
+      if (!alt) {
+        toast.info("No AI decision available");
+        return;
+      }
 
-    const detail = { priority: mappedPriority, meta };
-    const evt = new CustomEvent("ai-recommendation-apply", { detail });
-    window.dispatchEvent(evt);
-    setOpen(false);
+      const meta: any = {
+        trainType,
+        consistDestination: destination,
+        direction: direction || undefined,
+        currentStationCode: currentStationCode || undefined,
+        directive:
+          alt.directive === "halt" || alt.directive === "stable"
+            ? alt.directive
+            : "pass",
+        passThroughLine: (
+          ["Up Main", "Down Main", "Reverse"] as Line[]
+        ).includes(alt.passThroughLine as any)
+          ? (alt.passThroughLine as Line)
+          : undefined,
+        loopStation: (
+          ["Chandanpur", "Masagram", "Gurap", "Saktigarh"] as Station[]
+        ).includes(alt.loopStation as any)
+          ? (alt.loopStation as Station)
+          : undefined,
+        loopId: typeof alt.loopId === "number" ? alt.loopId : undefined,
+      };
+
+      const detail = { priority: mappedPriority, meta };
+      const evt = new CustomEvent("ai-recommendation-apply", { detail });
+      window.dispatchEvent(evt);
+
+      if (alt.title) toast.success(alt.title);
+      else if (alt.explanation) toast.success(alt.explanation);
+      else toast.success("AI decision applied");
+
+      setOpen(false);
+    } catch (e: any) {
+      toast.error(e?.message || "Failed to fetch AI decision");
+    }
   };
 
   return (
