@@ -2,10 +2,21 @@ import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import type { DecisionsResponse, Line, NewDecision, Station } from "@shared/api";
+import type {
+  DecisionsResponse,
+  Line,
+  NewDecision,
+  Station,
+} from "@shared/api";
 
 const stations: Station[] = [
   "Chandanpur",
@@ -81,7 +92,9 @@ export function TrackClosureReport() {
   return (
     <Card className="p-4 space-y-4">
       <div className="flex items-center justify-between">
-        <h3 className="text-sm font-semibold tracking-wide text-muted-foreground">Report Track Closure</h3>
+        <h3 className="text-sm font-semibold tracking-wide text-muted-foreground">
+          Report Track Closure
+        </h3>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -168,7 +181,10 @@ export function TrackClosureReport() {
           </div>
         )}
         <div className="sm:col-span-3 flex justify-end">
-          <Button onClick={() => mutation.mutate()} disabled={mutation.isPending}>
+          <Button
+            onClick={() => mutation.mutate()}
+            disabled={mutation.isPending}
+          >
             {mutation.isPending ? "Reporting..." : "Report"}
           </Button>
         </div>
@@ -176,7 +192,9 @@ export function TrackClosureReport() {
 
       {closures.length > 0 && (
         <div>
-          <div className="text-xs text-muted-foreground mb-2">Active closures</div>
+          <div className="text-xs text-muted-foreground mb-2">
+            Active closures
+          </div>
           <ul className="space-y-2">
             {closures.map((d) => (
               <li key={d.id} className="text-sm">

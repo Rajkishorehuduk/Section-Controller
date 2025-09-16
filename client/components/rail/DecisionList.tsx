@@ -47,21 +47,34 @@ export function DecisionList() {
 
   return (
     <Card className="p-4">
-      <h3 className="text-sm font-semibold tracking-wide text-muted-foreground mb-3">Decision Feed</h3>
+      <h3 className="text-sm font-semibold tracking-wide text-muted-foreground mb-3">
+        Decision Feed
+      </h3>
       <div className="space-y-2">
-        {isLoading && <div className="text-sm text-muted-foreground">Loading...</div>}
+        {isLoading && (
+          <div className="text-sm text-muted-foreground">Loading...</div>
+        )}
         {!isLoading && (!data || data.decisions.length === 0) && (
           <div className="text-sm text-muted-foreground">No decisions yet.</div>
         )}
         {data?.decisions.map((d) => (
-          <div key={d.id} className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 bg-background">
+          <div
+            key={d.id}
+            className="flex items-center justify-between gap-3 rounded-md border px-3 py-2 bg-background"
+          >
             <div className="flex items-center gap-2 min-w-0">
-              <Badge variant="outline" className="shrink-0">{d.priority}</Badge>
-              <span className="text-sm font-medium truncate">{lineText(d)}</span>
+              <Badge variant="outline" className="shrink-0">
+                {d.priority}
+              </Badge>
+              <span className="text-sm font-medium truncate">
+                {lineText(d)}
+              </span>
             </div>
             <div className="flex items-center gap-3">
               <div className="text-[11px] text-muted-foreground whitespace-nowrap">
-                {formatDistanceToNow(new Date(d.createdAt), { addSuffix: true })}
+                {formatDistanceToNow(new Date(d.createdAt), {
+                  addSuffix: true,
+                })}
               </div>
               <Button
                 size="sm"
