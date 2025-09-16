@@ -1,3 +1,65 @@
+// Workaround: swallow benign ResizeObserver loop warnings thrown by some libs
+if (typeof window !== "undefined" && (window as any).ResizeObserver) {
+  const RO = (window as any).ResizeObserver;
+  try {
+    (window as any).ResizeObserver = class extends RO {
+      constructor(cb: any) {
+        super((entries: any) => {
+          try {
+            cb(entries);
+          } catch (err: any) {
+            if (
+              !(err instanceof Error) ||
+              err.message !==
+                "ResizeObserver loop completed with undelivered notifications."
+            ) {
+              throw err;
+            }
+            // otherwise ignore the benign browser/runtime error
+          }
+        });
+      }
+    };
+  } catch (e) {
+    // ignore
+  }
+}
+
+// Additionally filter global error events to stop noisy ResizeObserver messages
+if (typeof window !== "undefined") {
+  window.addEventListener("error", (ev: ErrorEvent) => {
+    const msg = ev?.message || (ev?.error && ev.error.message);
+    if (
+      typeof msg === "string" &&
+      msg.includes(
+        "ResizeObserver loop completed with undelivered notifications",
+      )
+    ) {
+      try {
+        ev.preventDefault();
+        // stop propagation to avoid other handlers
+        ev.stopImmediatePropagation?.();
+      } catch {}
+    }
+  });
+
+  window.addEventListener("unhandledrejection", (ev: PromiseRejectionEvent) => {
+    const reason = ev?.reason;
+    const msg =
+      reason && (reason.message || (reason.toString && reason.toString()));
+    if (
+      typeof msg === "string" &&
+      msg.includes(
+        "ResizeObserver loop completed with undelivered notifications",
+      )
+    ) {
+      try {
+        ev.preventDefault();
+      } catch {}
+    }
+  });
+}
+
 import "./global.css";
 
 import { Toaster } from "@/components/ui/toaster";

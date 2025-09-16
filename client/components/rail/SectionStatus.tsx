@@ -23,9 +23,25 @@ export function SectionStatus({ className }: SectionStatusProps) {
   const { data } = useQuery<DecisionsResponse>({
     queryKey: ["decisions"],
     queryFn: async () => {
-      const res = await fetch("/api/decisions");
-      if (!res.ok) throw new Error("Failed to load decisions");
-      return res.json();
+      try {
+        const res = await fetch("/api/decisions");
+        if (!res.ok) {
+          console.warn(
+            "Decisions API responded with non-OK status",
+            res.status,
+          );
+          return { decisions: [] } as DecisionsResponse;
+        }
+        return (await res.json()) as DecisionsResponse;
+      } catch (err) {
+        // Network or other fetch failure (CORS, offline, etc.) — degrade gracefully
+        // eslint-disable-next-line no-console
+        console.warn(
+          "Failed to fetch /api/decisions, returning empty list",
+          err,
+        );
+        return { decisions: [] } as DecisionsResponse;
+      }
     },
     refetchInterval: 3000,
   });
@@ -37,9 +53,16 @@ export function SectionStatus({ className }: SectionStatusProps) {
       const exp = d.expiresAt ? new Date(d.expiresAt).getTime() : Infinity;
       return eff <= now && now < exp;
     })
-    .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+    .sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
 
-  const loads: Record<Line, number> = { "Up Main": 0, "Down Main": 0, Reverse: 0 };
+  const loads: Record<Line, number> = {
+    "Up Main": 0,
+    "Down Main": 0,
+    Reverse: 0,
+  };
   const blocked: Partial<Record<Line, boolean>> = {};
 
   for (const d of active) {
@@ -51,25 +74,39 @@ export function SectionStatus({ className }: SectionStatusProps) {
     if (d.effect?.lines) {
       for (const [ln, st] of Object.entries(d.effect.lines)) {
         if (st === "Blocked") blocked[ln as Line] = true;
-        if (st === "Occupied") loads[ln as Line] = Math.max(loads[ln as Line], 1);
-        if (st === "Maintenance") loads[ln as Line] = Math.max(loads[ln as Line], 1);
+        if (st === "Occupied")
+          loads[ln as Line] = Math.max(loads[ln as Line], 1);
+        if (st === "Maintenance")
+          loads[ln as Line] = Math.max(loads[ln as Line], 1);
       }
     }
     // Parse track closures
     const tc = d.meta?.trackClosure?.toLowerCase() || "";
     if (tc) {
       if (tc.includes("up") && tc.includes("main")) blocked["Up Main"] = true;
-      if (tc.includes("down") && tc.includes("main")) blocked["Down Main"] = true;
+      if (tc.includes("down") && tc.includes("main"))
+        blocked["Down Main"] = true;
       if (tc.includes("reverse")) blocked["Reverse"] = true;
     }
   }
 
   const level = (ln: Line): { label: string; disk: string; bar: string } => {
-    if (blocked[ln]) return { label: "Blocked", disk: diskColor.Blocked, bar: barColor.Blocked };
+    if (blocked[ln])
+      return {
+        label: "Blocked",
+        disk: diskColor.Blocked,
+        bar: barColor.Blocked,
+      };
     const n = loads[ln];
-    if (n === 0) return { label: "Clear", disk: diskColor.Clear, bar: barColor.Clear };
-    if (n <= 2) return { label: "Busy", disk: diskColor.Busy, bar: barColor.Busy };
-    return { label: "Congested", disk: diskColor.Congested, bar: barColor.Congested };
+    if (n === 0)
+      return { label: "Clear", disk: diskColor.Clear, bar: barColor.Clear };
+    if (n <= 2)
+      return { label: "Busy", disk: diskColor.Busy, bar: barColor.Busy };
+    return {
+      label: "Congested",
+      disk: diskColor.Congested,
+      bar: barColor.Congested,
+    };
   };
 
   const up = level("Up Main");
@@ -77,25 +114,44 @@ export function SectionStatus({ className }: SectionStatusProps) {
   const rev = level("Reverse");
 
   return (
-    <div className={cn("rounded-xl border bg-card text-card-foreground p-4", className)}>
+    <div
+      className={cn(
+        "rounded-xl border bg-card text-card-foreground p-4",
+        className,
+      )}
+    >
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-sm font-semibold tracking-wide text-muted-foreground">Eastern Railway • Section</h3>
-        <span className="text-xs text-muted-foreground">Chandanpur ↔ Shaktigarh</span>
+        <h3 className="text-sm font-semibold tracking-wide text-muted-foreground">
+          Eastern Railway • Section
+        </h3>
+        <span className="text-xs text-muted-foreground">
+          Chandanpur ↔ Shaktigarh
+        </span>
       </div>
 
       <div className="space-y-3">
         <div className="grid gap-3">
           <div className="flex items-center gap-3">
-            <span className="w-28 shrink-0 text-xs text-muted-foreground">Up Main Line</span>
+            <span className="w-28 shrink-0 text-xs text-muted-foreground">
+              Up Main Line
+            </span>
             <div className={cn("relative h-1.5 w-full rounded-full", up.bar)} />
           </div>
           <div className="flex items-center gap-3">
-            <span className="w-28 shrink-0 text-xs text-muted-foreground">Down Main Line</span>
-            <div className={cn("relative h-1.5 w-full rounded-full", down.bar)} />
+            <span className="w-28 shrink-0 text-xs text-muted-foreground">
+              Down Main Line
+            </span>
+            <div
+              className={cn("relative h-1.5 w-full rounded-full", down.bar)}
+            />
           </div>
           <div className="flex items-center gap-3">
-            <span className="w-28 shrink-0 text-xs text-muted-foreground">Reverse Line</span>
-            <div className={cn("relative h-1.5 w-full rounded-full", rev.bar)} />
+            <span className="w-28 shrink-0 text-xs text-muted-foreground">
+              Reverse Line
+            </span>
+            <div
+              className={cn("relative h-1.5 w-full rounded-full", rev.bar)}
+            />
           </div>
         </div>
         <div className="flex justify-between text-xs text-muted-foreground">
@@ -113,16 +169,22 @@ export function SectionStatus({ className }: SectionStatusProps) {
           </div>
         </div>
         <div className="rounded-lg border p-3 bg-background">
-          <div className="font-medium text-muted-foreground">Down Main Line</div>
+          <div className="font-medium text-muted-foreground">
+            Down Main Line
+          </div>
           <div className="mt-1 flex items-center gap-2">
-            <span className={cn("inline-flex h-2 w-2 rounded-full", down.disk)} />
+            <span
+              className={cn("inline-flex h-2 w-2 rounded-full", down.disk)}
+            />
             <span>{down.label}</span>
           </div>
         </div>
         <div className="rounded-lg border p-3 bg-background">
           <div className="font-medium text-muted-foreground">Reverse Line</div>
           <div className="mt-1 flex items-center gap-2">
-            <span className={cn("inline-flex h-2 w-2 rounded-full", rev.disk)} />
+            <span
+              className={cn("inline-flex h-2 w-2 rounded-full", rev.disk)}
+            />
             <span>{rev.label}</span>
           </div>
         </div>
