@@ -2,14 +2,20 @@ import { RequestHandler } from "express";
 import { Decision, NewDecision, AckRequest } from "@shared/api";
 import { randomUUID } from "crypto";
 
-// In-memory store for demo purposes
-const decisions: Decision[] = [];
+import { getDb } from "../firebase";
 
-export const listDecisions: RequestHandler = (_req, res) => {
-  res.status(200).json({ decisions });
+export const listDecisions: RequestHandler = async (_req, res) => {
+  try {
+    const db = getDb();
+    const snap = await db.collection("decisions").orderBy("createdAt", "desc").get();
+    const decisions = snap.docs.map((d) => ({ id: d.id, ...(d.data() as any) })) as Decision[];
+    res.status(200).json({ decisions });
+  } catch (e: any) {
+    res.status(500).json({ error: "listDecisions failed", message: e?.message || String(e) });
+  }
 };
 
-export const createDecision: RequestHandler = (req, res) => {
+export const createDecision: RequestHandler = async (req, res) => {
   const body = req.body as NewDecision;
 
   if (!body || !body.message || !body.category || !body.priority || !body.targets?.length) {
@@ -17,8 +23,7 @@ export const createDecision: RequestHandler = (req, res) => {
   }
 
   const now = new Date().toISOString();
-  const decision: Decision = {
-    id: randomUUID(),
+  const base: Omit<Decision, "id"> = {
     message: body.message,
     category: body.category,
     priority: body.priority,
@@ -35,27 +40,46 @@ export const createDecision: RequestHandler = (req, res) => {
     meta: body.meta,
   };
 
-  decisions.unshift(decision);
-  res.status(201).json({ decision });
+  try {
+    const db = getDb();
+    const ref = await db.collection("decisions").add(base as any);
+    const decision: Decision = { id: ref.id, ...(base as any) } as Decision;
+    res.status(201).json({ decision });
+  } catch (e: any) {
+    res.status(500).json({ error: "createDecision failed", message: e?.message || String(e) });
+  }
 };
 
-export const acknowledgeDecision: RequestHandler = (req, res) => {
+export const acknowledgeDecision: RequestHandler = async (req, res) => {
   const { id } = req.params;
   const body = req.body as AckRequest;
-  const decision = decisions.find((d) => d.id === id);
-
-  if (!decision) return res.status(404).json({ error: "Decision not found" });
   if (!body || !body.station) return res.status(400).json({ error: "Station is required" });
-  if (!decision.acknowledgements[body.station]) return res.status(400).json({ error: "Station not targeted for this decision" });
-
-  decision.acknowledgements[body.station] = { acknowledged: true, at: new Date().toISOString() };
-  res.status(200).json({ decision });
+  try {
+    const db = getDb();
+    const ref = db.collection("decisions").doc(id);
+    const snap = await ref.get();
+    if (!snap.exists) return res.status(404).json({ error: "Decision not found" });
+    const data = snap.data() as any;
+    if (!data.acknowledgements || !data.acknowledgements[body.station])
+      return res.status(400).json({ error: "Station not targeted for this decision" });
+    data.acknowledgements[body.station] = { acknowledged: true, at: new Date().toISOString() };
+    await ref.update({ acknowledgements: data.acknowledgements });
+    res.status(200).json({ decision: { id, ...(data as any), acknowledgements: data.acknowledgements } });
+  } catch (e: any) {
+    res.status(500).json({ error: "acknowledgeDecision failed", message: e?.message || String(e) });
+  }
 };
 
-export const deleteDecision: RequestHandler = (req, res) => {
+export const deleteDecision: RequestHandler = async (req, res) => {
   const { id } = req.params;
-  const idx = decisions.findIndex((d) => d.id === id);
-  if (idx === -1) return res.status(404).json({ error: "Decision not found" });
-  decisions.splice(idx, 1);
-  res.status(204).end();
+  try {
+    const db = getDb();
+    const ref = db.collection("decisions").doc(id);
+    const snap = await ref.get();
+    if (!snap.exists) return res.status(404).json({ error: "Decision not found" });
+    await ref.delete();
+    res.status(204).end();
+  } catch (e: any) {
+    res.status(500).json({ error: "deleteDecision failed", message: e?.message || String(e) });
+  }
 };
