@@ -16,6 +16,7 @@ import {
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Occupancy from "./pages/Occupancy";
+import AIAssistantPage from "./pages/AIAssistant";
 import { TrainFront } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -68,6 +69,9 @@ function Layout() {
               <Link to="/occupancy" className={linkClass("/occupancy")}>
                 Occupancy
               </Link>
+              <Link to="/assistant" className={linkClass("/assistant")}>
+                AI Assistant
+              </Link>
             </nav>
             <div
               className="text-sm sm:text-base font-mono tabular-nums text-muted-foreground"
@@ -101,6 +105,7 @@ const App = () => (
           <Route element={<Layout />}>
             <Route path="/" element={<Index />} />
             <Route path="/occupancy" element={<Occupancy />} />
+            <Route path="/assistant" element={<AIAssistantPage />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Route>
