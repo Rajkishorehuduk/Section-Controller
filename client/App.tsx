@@ -68,6 +68,9 @@ function Layout() {
               <Link to="/occupancy" className={linkClass("/occupancy")}>
                 Occupancy
               </Link>
+              <Link to="/assistant" className={linkClass("/assistant")}>
+                AI Assistant
+              </Link>
             </nav>
             <div
               className="text-sm sm:text-base font-mono tabular-nums text-muted-foreground"
