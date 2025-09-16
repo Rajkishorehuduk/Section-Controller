@@ -23,9 +23,19 @@ export function SectionStatus({ className }: SectionStatusProps) {
   const { data } = useQuery<DecisionsResponse>({
     queryKey: ["decisions"],
     queryFn: async () => {
-      const res = await fetch("/api/decisions");
-      if (!res.ok) throw new Error("Failed to load decisions");
-      return res.json();
+      try {
+        const res = await fetch("/api/decisions");
+        if (!res.ok) {
+          console.warn('Decisions API responded with non-OK status', res.status);
+          return { decisions: [] } as DecisionsResponse;
+        }
+        return (await res.json()) as DecisionsResponse;
+      } catch (err) {
+        // Network or other fetch failure (CORS, offline, etc.) — degrade gracefully
+        // eslint-disable-next-line no-console
+        console.warn('Failed to fetch /api/decisions, returning empty list', err);
+        return { decisions: [] } as DecisionsResponse;
+      }
     },
     refetchInterval: 3000,
   });
