@@ -43,9 +43,13 @@ export default function Occupancy() {
   const { data } = useQuery<DecisionsResponse>({
     queryKey: ["decisions"],
     queryFn: async () => {
-      const res = await fetch("/api/decisions");
-      if (!res.ok) throw new Error("Failed to load decisions");
-      return res.json();
+      try {
+        const res = await fetch("/api/decisions");
+        if (!res.ok) return { decisions: [] };
+        return res.json();
+      } catch (e) {
+        return { decisions: [] };
+      }
     },
     refetchInterval: 5000,
   });
