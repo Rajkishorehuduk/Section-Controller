@@ -16,6 +16,7 @@ import {
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import Occupancy from "./pages/Occupancy";
+import AIAssistantPage from "./pages/AIAssistant";
 import { TrainFront } from "lucide-react";
 import { useEffect, useState } from "react";
 
