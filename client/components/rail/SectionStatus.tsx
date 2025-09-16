@@ -23,9 +23,14 @@ export function SectionStatus({ className }: SectionStatusProps) {
   const { data } = useQuery<DecisionsResponse>({
     queryKey: ["decisions"],
     queryFn: async () => {
-      const res = await fetch("/api/decisions");
-      if (!res.ok) throw new Error("Failed to load decisions");
-      return res.json();
+      try {
+        const res = await fetch("/api/decisions");
+        if (!res.ok) return { decisions: [] };
+        return res.json();
+      } catch (e) {
+        // network error — return empty dataset to avoid crashing UI
+        return { decisions: [] };
+      }
     },
     refetchInterval: 3000,
   });
