@@ -109,7 +109,9 @@ export function AIAssistant() {
           inputs: {
             priority: mappedPriority,
             destination,
-            currentPosition: currentStationCode ? `At ${currentStationCode}` : undefined,
+            currentPosition: currentStationCode
+              ? `At ${currentStationCode}`
+              : undefined,
           },
         }),
       });
@@ -118,7 +120,9 @@ export function AIAssistant() {
         throw new Error(msg || "AI service failed");
       }
       const data: any = await res.json();
-      const alt = Array.isArray(data?.alternatives) ? data.alternatives[0] : null;
+      const alt = Array.isArray(data?.alternatives)
+        ? data.alternatives[0]
+        : null;
       if (!alt) {
         toast.info("No AI decision available");
         return;
@@ -129,13 +133,18 @@ export function AIAssistant() {
         consistDestination: destination,
         direction: direction || undefined,
         currentStationCode: currentStationCode || undefined,
-        directive: alt.directive === "halt" || alt.directive === "stable" ? alt.directive : "pass",
-        passThroughLine: (["Up Main", "Down Main", "Reverse"] as Line[]).includes(alt.passThroughLine as any)
+        directive:
+          alt.directive === "halt" || alt.directive === "stable"
+            ? alt.directive
+            : "pass",
+        passThroughLine: (
+          ["Up Main", "Down Main", "Reverse"] as Line[]
+        ).includes(alt.passThroughLine as any)
           ? (alt.passThroughLine as Line)
           : undefined,
-        loopStation: (["Chandanpur", "Masagram", "Gurap", "Saktigarh"] as Station[]).includes(
-          alt.loopStation as any,
-        )
+        loopStation: (
+          ["Chandanpur", "Masagram", "Gurap", "Saktigarh"] as Station[]
+        ).includes(alt.loopStation as any)
           ? (alt.loopStation as Station)
           : undefined,
         loopId: typeof alt.loopId === "number" ? alt.loopId : undefined,

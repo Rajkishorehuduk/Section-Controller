@@ -148,8 +148,10 @@ export function DecisionForm() {
         }
         const tc = d.meta?.trackClosure?.toLowerCase() || "";
         if (tc) {
-          if (tc.includes("up") && tc.includes("main")) blocked["Up Main"] = true;
-          if (tc.includes("down") && tc.includes("main")) blocked["Down Main"] = true;
+          if (tc.includes("up") && tc.includes("main"))
+            blocked["Up Main"] = true;
+          if (tc.includes("down") && tc.includes("main"))
+            blocked["Down Main"] = true;
           if (tc.includes("reverse")) blocked["Reverse"] = true;
         }
       }
@@ -171,7 +173,9 @@ export function DecisionForm() {
         throw new Error(txt || "AI request failed");
       }
       const data: any = await res.json();
-      const alt: any = Array.isArray(data?.alternatives) ? data.alternatives[0] : null;
+      const alt: any = Array.isArray(data?.alternatives)
+        ? data.alternatives[0]
+        : null;
       if (!alt) {
         toast.info("No AI suggestions");
         return;
@@ -185,14 +189,14 @@ export function DecisionForm() {
             alt.directive === "halt" || alt.directive === "stable"
               ? (alt.directive as any)
               : ("pass" as any),
-          passThroughLine: (["Up Main", "Down Main", "Reverse"] as Line[]).includes(
-            alt.passThroughLine as any,
-          )
+          passThroughLine: (
+            ["Up Main", "Down Main", "Reverse"] as Line[]
+          ).includes(alt.passThroughLine as any)
             ? (alt.passThroughLine as Line)
             : f.meta?.passThroughLine,
-          loopStation: (["Chandanpur", "Masagram", "Gurap", "Saktigarh"] as Station[]).includes(
-            alt.loopStation as any,
-          )
+          loopStation: (
+            ["Chandanpur", "Masagram", "Gurap", "Saktigarh"] as Station[]
+          ).includes(alt.loopStation as any)
             ? (alt.loopStation as Station)
             : f.meta?.loopStation,
           loopId: typeof alt.loopId === "number" ? alt.loopId : f.meta?.loopId,
