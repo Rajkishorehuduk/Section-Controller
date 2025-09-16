@@ -129,7 +129,10 @@ export function AIAssistant() {
 
   return (
     <>
-      <Dialog open={open} onOpenChange={(v) => (v ? setOpen(true) : setOpen(false))}>
+      <Dialog
+        open={open}
+        onOpenChange={(v) => (v ? setOpen(true) : setOpen(false))}
+      >
         <DialogContent className="w-full max-w-xl p-0 overflow-hidden">
           <div className="h-2 bg-gradient-to-r from-primary to-primary/60" />
           <div className="p-6">
@@ -145,7 +148,10 @@ export function AIAssistant() {
             <div className="mt-4 grid gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Train Priority</label>
-                <Select value={priority} onValueChange={(v) => setPriority(v as any)}>
+                <Select
+                  value={priority}
+                  onValueChange={(v) => setPriority(v as any)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Choose" />
                   </SelectTrigger>
@@ -159,7 +165,10 @@ export function AIAssistant() {
 
               <div className="space-y-2">
                 <label className="text-sm font-medium">Train Type</label>
-                <Select value={trainType} onValueChange={(v) => setTrainType(v)}>
+                <Select
+                  value={trainType}
+                  onValueChange={(v) => setTrainType(v)}
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Choose" />
                   </SelectTrigger>
@@ -238,7 +247,13 @@ export function AIAssistant() {
 
               {priority || direction ? (
                 <div className="text-xs text-muted-foreground">
-                  Live occupancy — Up: {live.loads["Up Main"] ?? 0}, Down: {live.loads["Down Main"] ?? 0}, Reverse: {live.loads["Reverse"] ?? 0}. Blocked: {(["Up Main","Down Main","Reverse"] as Line[]).filter((l)=>live.blocked[l]).join(", ") || "None"}.
+                  Live occupancy — Up: {live.loads["Up Main"] ?? 0}, Down:{" "}
+                  {live.loads["Down Main"] ?? 0}, Reverse:{" "}
+                  {live.loads["Reverse"] ?? 0}. Blocked:{" "}
+                  {(["Up Main", "Down Main", "Reverse"] as Line[])
+                    .filter((l) => live.blocked[l])
+                    .join(", ") || "None"}
+                  .
                 </div>
               ) : null}
 
@@ -249,7 +264,12 @@ export function AIAssistant() {
                 <Button
                   type="button"
                   onClick={submit}
-                  disabled={!priority || !direction || !currentStationCode || !categoryChoice}
+                  disabled={
+                    !priority ||
+                    !direction ||
+                    !currentStationCode ||
+                    !categoryChoice
+                  }
                 >
                   Submit
                 </Button>

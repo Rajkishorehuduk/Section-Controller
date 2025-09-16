@@ -10,7 +10,8 @@ if (typeof window !== "undefined" && (window as any).ResizeObserver) {
           } catch (err: any) {
             if (
               !(err instanceof Error) ||
-              err.message !== "ResizeObserver loop completed with undelivered notifications."
+              err.message !==
+                "ResizeObserver loop completed with undelivered notifications."
             ) {
               throw err;
             }
@@ -30,7 +31,9 @@ if (typeof window !== "undefined") {
     const msg = ev?.message || (ev?.error && ev.error.message);
     if (
       typeof msg === "string" &&
-      msg.includes("ResizeObserver loop completed with undelivered notifications")
+      msg.includes(
+        "ResizeObserver loop completed with undelivered notifications",
+      )
     ) {
       try {
         ev.preventDefault();
@@ -42,8 +45,14 @@ if (typeof window !== "undefined") {
 
   window.addEventListener("unhandledrejection", (ev: PromiseRejectionEvent) => {
     const reason = ev?.reason;
-    const msg = reason && (reason.message || reason.toString && reason.toString());
-    if (typeof msg === "string" && msg.includes("ResizeObserver loop completed with undelivered notifications")) {
+    const msg =
+      reason && (reason.message || (reason.toString && reason.toString()));
+    if (
+      typeof msg === "string" &&
+      msg.includes(
+        "ResizeObserver loop completed with undelivered notifications",
+      )
+    ) {
       try {
         ev.preventDefault();
       } catch {}
