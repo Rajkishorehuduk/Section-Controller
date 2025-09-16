@@ -77,7 +77,9 @@ export default function AIAssistantPage() {
       <div className="container max-w-3xl py-8">
         <Card className="border-0 shadow-none">
           <div className="px-6 pt-6">
-            <h1 className="text-2xl font-semibold leading-tight">Train Information Form</h1>
+            <h1 className="text-2xl font-semibold leading-tight">
+              Train Information Form
+            </h1>
             <p className="mt-1 text-sm text-muted-foreground">
               Please provide the details for the train operations.
             </p>
@@ -89,7 +91,10 @@ export default function AIAssistantPage() {
               <Select
                 value={data.priority}
                 onValueChange={(v) =>
-                  setData((s) => ({ ...s, priority: v as FormState["priority"] }))
+                  setData((s) => ({
+                    ...s,
+                    priority: v as FormState["priority"],
+                  }))
                 }
               >
                 <SelectTrigger>
@@ -108,7 +113,10 @@ export default function AIAssistantPage() {
               <Select
                 value={data.trainType}
                 onValueChange={(v) =>
-                  setData((s) => ({ ...s, trainType: v as FormState["trainType"] }))
+                  setData((s) => ({
+                    ...s,
+                    trainType: v as FormState["trainType"],
+                  }))
                 }
               >
                 <SelectTrigger>
@@ -130,7 +138,9 @@ export default function AIAssistantPage() {
               <Input
                 placeholder="Your answer"
                 value={data.destination}
-                onChange={(e) => setData((s) => ({ ...s, destination: e.target.value }))}
+                onChange={(e) =>
+                  setData((s) => ({ ...s, destination: e.target.value }))
+                }
               />
             </div>
 
@@ -139,7 +149,10 @@ export default function AIAssistantPage() {
               <Select
                 value={data.direction}
                 onValueChange={(v) =>
-                  setData((s) => ({ ...s, direction: v as FormState["direction"] }))
+                  setData((s) => ({
+                    ...s,
+                    direction: v as FormState["direction"],
+                  }))
                 }
               >
                 <SelectTrigger>
@@ -157,7 +170,10 @@ export default function AIAssistantPage() {
               <Select
                 value={data.currentStation}
                 onValueChange={(v) =>
-                  setData((s) => ({ ...s, currentStation: v as FormState["currentStation"] }))
+                  setData((s) => ({
+                    ...s,
+                    currentStation: v as FormState["currentStation"],
+                  }))
                 }
               >
                 <SelectTrigger>
@@ -187,7 +203,10 @@ export default function AIAssistantPage() {
               <Select
                 value={data.category}
                 onValueChange={(v) =>
-                  setData((s) => ({ ...s, category: v as FormState["category"] }))
+                  setData((s) => ({
+                    ...s,
+                    category: v as FormState["category"],
+                  }))
                 }
               >
                 <SelectTrigger>
@@ -195,7 +214,9 @@ export default function AIAssistantPage() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Pass Through">Pass Through</SelectItem>
-                  <SelectItem value="Loop at Some Station">Loop at Some Station</SelectItem>
+                  <SelectItem value="Loop at Some Station">
+                    Loop at Some Station
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
