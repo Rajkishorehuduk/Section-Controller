@@ -109,7 +109,7 @@ export function AIAssistant() {
 
     if (categoryChoice === "Pass Through") {
       meta.directive = "pass";
-      meta.passThroughLine = lineFromDirection(direction);
+      meta.passThroughLine = lineFromDirection(direction || undefined);
     } else if (categoryChoice === "Loop at Some Station") {
       meta.directive = "stable";
       const stationName = stationCodeOptions.find(
