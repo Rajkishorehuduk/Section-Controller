@@ -1,3 +1,29 @@
+// Workaround: swallow benign ResizeObserver loop warnings thrown by some libs
+if (typeof window !== "undefined" && (window as any).ResizeObserver) {
+  const RO = (window as any).ResizeObserver;
+  try {
+    (window as any).ResizeObserver = class extends RO {
+      constructor(cb: any) {
+        super((entries: any) => {
+          try {
+            cb(entries);
+          } catch (err: any) {
+            if (
+              !(err instanceof Error) ||
+              err.message !== "ResizeObserver loop completed with undelivered notifications."
+            ) {
+              throw err;
+            }
+            // otherwise ignore the benign browser/runtime error
+          }
+        });
+      }
+    };
+  } catch (e) {
+    // ignore
+  }
+}
+
 import "./global.css";
 
 import { Toaster } from "@/components/ui/toaster";
