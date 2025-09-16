@@ -53,6 +53,9 @@ export interface DecisionMeta {
   trackClosure?: string;
   currentPosition?: string;
   directive?: "pass" | "halt" | "stable";
+  trainType?: string;
+  direction?: "Up" | "Down";
+  currentStationCode?: string;
 }
 
 export interface Decision {
